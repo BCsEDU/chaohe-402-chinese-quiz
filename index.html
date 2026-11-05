@@ -404,6 +404,65 @@
     border-radius: 8px;
   }
 
+  /* 台灣教育部標準直書注音排版 */
+  .zhuyin-box {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    background: #eff6ff;
+    border: 2px solid #93c5fd;
+    border-radius: 12px;
+    padding: 6px 10px 6px 12px;
+    margin: 2px 6px;
+    line-height: 1;
+  }
+
+  .option-btn.correct .zhuyin-box {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: #16a34a;
+  }
+
+  .option-btn.wrong .zhuyin-box {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: #dc2626;
+  }
+
+  .zhuyin-phonemes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78em;
+    line-height: 1.05;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
+
+  .zhuyin-phonemes span {
+    display: block;
+    text-align: center;
+  }
+
+  .zhuyin-tone-side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    font-weight: 900;
+    margin-left: 2px;
+    line-height: 1;
+    align-self: center;
+  }
+
+  .zhuyin-tone-light {
+    font-size: 0.65em;
+    font-weight: 900;
+    line-height: 0.6;
+    margin-bottom: 2px;
+  }
+
   .options-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -924,10 +983,27 @@ let userState = {}; // { qIndex: { selected: number | null, revealed: boolean } 
 let isListMode = false;
 let fontScale = 1;
 
+// 將注音字串自動轉換為台灣國小標準「直書＋聲調居右（輕聲居頂）」HTML
+function renderZhuyinCluster(cluster) {
+  let tone = "";
+  let phonemes = cluster;
+  const lastChar = cluster.slice(-1);
+  if (["ˊ", "ˇ", "ˋ", "˙"].includes(lastChar)) {
+    tone = lastChar;
+    phonemes = cluster.slice(0, -1);
+  }
+  const charsHtml = Array.from(phonemes).map(ch => `<span>${ch}</span>`).join("");
+  const lightToneHtml = (tone === "˙") ? `<span class="zhuyin-tone-light">˙</span>` : "";
+  const sideToneHtml = (tone && tone !== "˙") ? `<span class="zhuyin-tone-side">${tone}</span>` : "";
+
+  return `<span class="zhuyin-box"><span class="zhuyin-phonemes">${lightToneHtml}${charsHtml}</span>${sideToneHtml}</span>`;
+}
+
 function formatStemHTML(text) {
   return text
     .replace(/（　）/g, '<span class="highlight-blank">　</span>')
-    .replace(/【([^】]+)】/g, '<span class="highlight-quote">【$1】</span>');
+    .replace(/【([^】]+)】/g, '<span class="highlight-quote">【$1】</span>')
+    .replace(/([ㄅ-ㄩ]+[ˊˇˋ˙]?)/g, (match) => renderZhuyinCluster(match));
 }
 
 function renderHome() {
@@ -1037,7 +1113,7 @@ function renderQuestionStage() {
     } else {
       expHeader.textContent = `❌ 答錯囉！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
     }
-    expBody.textContent = q.explanation;
+    expBody.innerHTML = formatStemHTML(q.explanation);
   } else {
     expBox.classList.remove("show");
   }
@@ -1166,7 +1242,7 @@ function renderListMode() {
         </div>
         <div class="explanation-box ${st.revealed ? 'show' : ''}">
           <div class="exp-header">${expHeaderText}</div>
-          <div class="exp-body">${q.explanation}</div>
+          <div class="exp-body">${formatStemHTML(q.explanation)}</div>
         </div>
       </div>
     `;
