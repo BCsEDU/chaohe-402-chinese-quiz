@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>國語隨堂練習互動網（第七課～第十二課）</title>
+<style>
+  :root {
+    --bg: #eef4fa;
+    --surface: #ffffff;
+    --surface-sub: #f8fafc;
+    --primary: #1e40af;
+    --primary-hover: #1d4ed8;
+    --primary-light: #dbeafe;
+    --accent: #d97706;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --border: #cbd5e1;
+    --correct-bg: #dcfce7;
+    --correct-border: #16a34a;
+    --correct-text: #14532d;
+    --wrong-bg: #fee2e2;
+    --wrong-border: #dc2626;
+    --wrong-text: #7f1d1d;
+    --font-scale: 1;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%;
+    min-height: 100vh;
+    font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* 頂部導覽列 */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #1e3a8a;
+    color: #fff;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .brand-badge {
+    background: #fbbf24;
+    color: #1e3a8a;
+    font-weight: 900;
+    font-size: 1.25rem;
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+
+  .brand-title {
+    font-size: 1.65rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tool-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+    transform: translateY(-1px);
+  }
+
+  .tool-btn.active {
+    background: #fbbf24;
+    color: #1e3a8a;
+    border-color: #fbbf24;
+  }
+
+  /* 主容器 */
+  main {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+  }
+
+  /* 首頁：課次選擇畫面 */
+  #home-view {
+    display: block;
+  }
+
+  .hero-banner {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    color: #fff;
+    border-radius: 24px;
+    padding: 36px 40px;
+    margin-bottom: 32px;
+    box-shadow: 0 12px 28px rgba(30, 64, 175, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .hero-banner h1 {
+    font-size: calc(2.4rem * var(--font-scale));
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .hero-banner p {
+    font-size: calc(1.35rem * var(--font-scale));
+    color: #dbeafe;
+    font-weight: 600;
+  }
+
+  .lesson-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 24px;
+  }
+
+  .lesson-card {
+    background: var(--surface);
+    border: 3px solid #cbd5e1;
+    border-radius: 22px;
+    padding: 28px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lesson-card.ready {
+    border-color: #3b82f6;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  .lesson-card.ready:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 32px rgba(30, 64, 175, 0.16);
+    border-color: #1d4ed8;
+  }
+
+  .lesson-card.locked {
+    background: #f1f5f9;
+    border-style: dashed;
+    opacity: 0.78;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .lesson-tag {
+    font-size: calc(1.25rem * var(--font-scale));
+    font-weight: 900;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .lesson-card.locked .lesson-tag {
+    background: #e2e8f0;
+    color: #64748b;
+  }
+
+  .status-pill {
+    font-size: 1.05rem;
+    font-weight: 800;
+    padding: 5px 14px;
+    border-radius: 999px;
+  }
+
+  .status-pill.ready {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .status-pill.soon {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  .lesson-name {
+    font-size: calc(2.1rem * var(--font-scale));
+    font-weight: 900;
+    color: var(--text);
+  }
+
+  .lesson-desc {
+    font-size: calc(1.2rem * var(--font-scale));
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .start-btn {
+    margin-top: 6px;
+    background: #1e40af;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 22px;
+    font-size: calc(1.35rem * var(--font-scale));
+    font-weight: 900;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s;
+  }
+
+  .lesson-card.ready:hover .start-btn {
+    background: #1d4ed8;
+  }
+
+  .lesson-card.locked .start-btn {
+    background: #cbd5e1;
+    color: #64748b;
+    cursor: not-allowed;
+  }
+
+  /* 測驗畫面 */
+  #quiz-view {
+    display: none;
+  }
+
+  /* 大題與題號導覽列 */
+  .quiz-nav-panel {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 18px 24px;
+    margin-bottom: 22px;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .quiz-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .quiz-lesson-title {
+    font-size: calc(1.85rem * var(--font-scale));
+    font-weight: 900;
+    color: #1e3a8a;
+  }
+
+  .category-badge {
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px solid #f59e0b;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: calc(1.3rem * var(--font-scale));
+    font-weight: 900;
+  }
+
+  .q-dots {
+    display: grid;
+    grid-template-columns: repeat(15, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .q-dots {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+
+  .q-dot {
+    height: 46px;
+    border-radius: 10px;
+    border: 2px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 1.25rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .q-dot:hover {
+    border-color: #1e40af;
+    background: #eff6ff;
+  }
+
+  .q-dot.current {
+    background: #1e40af;
+    color: #fff;
+    border-color: #1e3a8a;
+    transform: scale(1.07);
+    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
+  }
+
+  .q-dot.answered-correct {
+    background: #dcfce7;
+    border-color: #16a34a;
+    color: #14532d;
+  }
+
+  .q-dot.answered-wrong {
+    background: #fee2e2;
+    border-color: #dc2626;
+    color: #7f1d1d;
+  }
+
+  /* 投影模式：單題巨型字卡 */
+  .stage-card {
+    background: var(--surface);
+    border-radius: 26px;
+    padding: 36px 42px;
+    border: 3px solid #94a3b8;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+    margin-bottom: 24px;
+  }
+
+  .question-stem {
+    font-size: calc(2.45rem * var(--font-scale));
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.55;
+    margin-bottom: 32px;
+    letter-spacing: 0.5px;
+  }
+
+  .question-num-pill {
+    display: inline-block;
+    background: #1e40af;
+    color: #fff;
+    font-size: calc(1.9rem * var(--font-scale));
+    padding: 4px 18px;
+    border-radius: 14px;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  .highlight-blank {
+    display: inline-block;
+    min-width: 2.2em;
+    padding: 0 10px;
+    margin: 0 4px;
+    border-bottom: 4px solid #1e40af;
+    color: #1e40af;
+    text-align: center;
+    background: #eff6ff;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .highlight-quote {
+    color: #b45309;
+    background: #fef3c7;
+    padding: 2px 8px;
+    border-radius: 8px;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .options-grid.single-col {
+    grid-template-columns: 1fr;
+  }
+
+  @media (max-width: 960px) {
+    .options-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .option-btn {
+    background: #f8fafc;
+    border: 3.5px solid #cbd5e1;
+    border-radius: 20px;
+    padding: 22px 28px;
+    font-size: calc(2.05rem * var(--font-scale));
+    font-weight: 800;
+    color: #1e293b;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    transition: all 0.15s ease;
+    line-height: 1.4;
+  }
+
+  .option-btn:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+    transform: translateY(-2px);
+  }
+
+  .opt-index {
+    flex-shrink: 0;
+    width: calc(3.2rem * var(--font-scale));
+    height: calc(3.2rem * var(--font-scale));
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(1.85rem * var(--font-scale));
+    font-weight: 900;
+  }
+
+  .option-btn.correct {
+    background: var(--correct-bg);
+    border-color: var(--correct-border);
+    color: var(--correct-text);
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.2);
+  }
+
+  .option-btn.correct .opt-index {
+    background: #16a34a;
+    color: #fff;
+  }
+
+  .option-btn.wrong {
+    background: var(--wrong-bg);
+    border-color: var(--wrong-border);
+    color: var(--wrong-text);
+  }
+
+  .option-btn.wrong .opt-index {
+    background: #dc2626;
+    color: #fff;
+  }
+
+  /* 詳解卡片 */
+  .explanation-box {
+    margin-top: 28px;
+    background: #fffbeb;
+    border: 3px solid #f59e0b;
+    border-radius: 20px;
+    padding: 24px 30px;
+    display: none;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .explanation-box.show {
+    display: block;
+  }
+
+  .exp-header {
+    font-size: calc(1.65rem * var(--font-scale));
+    font-weight: 900;
+    color: #b45309;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .exp-body {
+    font-size: calc(1.85rem * var(--font-scale));
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.55;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 底部控制列 */
+  .stage-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-btn {
+    padding: 16px 28px;
+    border-radius: 16px;
+    font-size: calc(1.5rem * var(--font-scale));
+    font-weight: 900;
+    border: 2.5px solid #cbd5e1;
+    background: #fff;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ctrl-btn:hover:not(:disabled) {
+    border-color: #1e40af;
+    background: #eff6ff;
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .ctrl-btn.primary {
+    background: #1e40af;
+    color: #fff;
+    border-color: #1e3a8a;
+  }
+
+  .ctrl-btn.primary:hover:not(:disabled) {
+    background: #1d4ed8;
+  }
+
+  .ctrl-btn.reveal {
+    background: #f59e0b;
+    color: #fff;
+    border-color: #d97706;
+  }
+
+  .ctrl-btn.reveal:hover {
+    background: #d97706;
+  }
+
+  /* 全卷一覽模式 */
+  #list-mode-container {
+    display: none;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section-banner {
+    background: #1e3a8a;
+    color: #fff;
+    padding: 16px 26px;
+    border-radius: 16px;
+    font-size: calc(1.75rem * var(--font-scale));
+    font-weight: 900;
+    margin-top: 12px;
+  }
+
+  .keyboard-hint {
+    text-align: center;
+    margin-top: 22px;
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand" onclick="goHome()" title="返回課次選擇首頁">
+    <span class="brand-badge">國語隨堂練</span>
+    <span class="brand-title">第七課～第十二課 課堂互動測驗網</span>
+  </div>
+  <div class="toolbar">
+    <button class="tool-btn" id="btn-home" onclick="goHome()" style="display:none;">🏠 返回選課首頁</button>
+    <button class="tool-btn" id="btn-mode-toggle" onclick="toggleDisplayMode()" style="display:none;">📋 切換全卷檢視</button>
+    <button class="tool-btn" onclick="adjustFontSize(-0.1)" title="縮小字體">A-</button>
+    <button class="tool-btn" onclick="adjustFontSize(0)" title="標準字體">標準字級</button>
+    <button class="tool-btn" onclick="adjustFontSize(0.12)" title="放大字體">A+</button>
+    <button class="tool-btn" onclick="toggleFullscreen()">⛶ 全螢幕投影</button>
+  </div>
+</header>
+
+<main>
+  <!-- 第一個畫面：選擇課次首頁 -->
+  <section id="home-view">
+    <div class="hero-banner">
+      <div>
+        <h1>國語文隨堂練習（第七課～第十二課）</h1>
+        <p>專為課堂大螢幕投影設計・點擊選項即時批改與顯示詳解・無計分壓力</p>
+      </div>
+    </div>
+
+    <div class="lesson-grid" id="lesson-grid"></div>
+  </section>
+
+  <!-- 第二個畫面：課堂投影測驗畫面 -->
+  <section id="quiz-view">
+    <div class="quiz-nav-panel">
+      <div class="quiz-header-row">
+        <div class="quiz-lesson-title" id="quiz-lesson-title">第七課 到此「藝」遊</div>
+        <div class="category-badge" id="quiz-category-badge">一、形近字與多音字辨別</div>
+      </div>
+      <div class="q-dots" id="q-dots"></div>
+    </div>
+
+    <!-- 單題投影舞台模式 -->
+    <div id="single-stage-container">
+      <div class="stage-card">
+        <div class="question-stem" id="stage-stem"></div>
+        <div class="options-grid" id="stage-options"></div>
+        <div class="explanation-box" id="stage-exp">
+          <div class="exp-header" id="stage-exp-header">💡 答案與解析</div>
+          <div class="exp-body" id="stage-exp-body"></div>
+        </div>
+      </div>
+
+      <div class="stage-controls">
+        <div class="ctrl-group">
+          <button class="ctrl-btn" id="btn-prev" onclick="prevQuestion()">⬅ 上一題</button>
+          <button class="ctrl-btn primary" id="btn-next" onclick="nextQuestion()">下一題 ➡</button>
+        </div>
+        <div class="ctrl-group">
+          <button class="ctrl-btn reveal" onclick="revealCurrentAnswer()">💡 直接公佈答案與解析</button>
+          <button class="ctrl-btn" onclick="resetCurrentQuestion()">🔄 重置本題</button>
+          <button class="ctrl-btn" onclick="resetAllQuestions()">🧹 全部重作</button>
+        </div>
+      </div>
+      <div class="keyboard-hint">
+        ⌨️ 課堂快捷鍵：按 <b>← / →</b> 切換上、下一題 ｜ 按數字鍵 <b>1～4</b> 直接作答 ｜ 按 <b>空白鍵</b> 公佈解析
+      </div>
+    </div>
+
+    <!-- 全卷一覽模式（供老師快速捲動檢討） -->
+    <div id="list-mode-container"></div>
+  </section>
+</main>
+
+<script>
+// 題庫資料（第七課已完整建置，第八～十二課預留擴充結構）
+const LESSONS = [
+  {
+    id: "L7",
+    lessonNum: "第七課",
+    title: "到此「藝」遊",
+    subtitle: "形近字、字義、成語隨堂練習（共 15 題）",
+    ready: true,
+    questions: [
+      // 一、形近字與多音字辨別（1~5）
+      {
+        section: "一、形近字與多音字辨別",
+        stem: "醫院門口貼著「禁」止吸菸的標示，但那個看起來弱不「禁」風的病人卻不聽勸阻。根據句意，這兩個「禁」字的注音依序為何？",
+        options: [
+          "ㄐㄧㄣ、ㄐㄧㄣˋ",
+          "ㄐㄧㄣˋ、ㄐㄧㄣ",
+          "ㄐㄧㄣˋ、ㄐㄧㄣˋ",
+          "ㄐㄧㄣ、ㄐㄧㄣ"
+        ],
+        answer: 1, // 0-indexed -> ②
+        explanation: "「禁」字為多音字，禁止的「禁」音為「ㄐㄧㄣˋ」；弱不禁風（承受、忍受）的「禁」音為「ㄐㄧㄣ」。"
+      },
+      {
+        section: "一、形近字與多音字辨別",
+        stem: "弟弟個性很（　）氣，在客廳玩耍時，不小心撞倒了桌上的（　）偶，而姊姊當時正（　）醉在優美的音樂裡。請問括號中依序應填入哪三個字？",
+        options: [
+          "陶、淘、陶",
+          "淘、陶、淘",
+          "淘、陶、陶",
+          "陶、淘、淘"
+        ],
+        answer: 2, // ③
+        explanation: "頑皮、玩耍為「淘氣」（水部）；用黏土燒製的玩偶為「陶偶」、沉醉其中為「陶醉」（阜部）。"
+      },
+      {
+        section: "一、形近字與多音字辨別",
+        stem: "翻開這本書的（　）錄，小敏總是能一（　）十行，而且她從小就會（　）動自發的完成作業。請問括號中依序應填入哪三個字？",
+        options: [
+          "目、自、自",
+          "自、目、自",
+          "目、目、自",
+          "目、自、目"
+        ],
+        answer: 2, // ③
+        explanation: "書本前的檢索與眼睛閱讀為「目」（目錄、一目十行）；自己主動為「自」（自動自發）。"
+      },
+      {
+        section: "一、形近字與多音字辨別",
+        stem: "下列各組「　」中的字，哪一組的字音完全相同？",
+        options: [
+          "弱不「禁」風 ／ 「禁」止通行",
+          "「淘」金熱潮 ／ 樂「陶」陶",
+          "一「目」十行 ／ 「自」由自在",
+          "「斗」室雖小 ／ 「件」數眾多"
+        ],
+        answer: 1, // ②
+        explanation: "① ㄐㄧㄣ ／ ㄐㄧㄣˋ；② 皆為「ㄊㄠˊ」；③ ㄇㄨˋ ／ ㄗˋ；④ ㄉㄡˇ ／ ㄐㄧㄢˋ。"
+      },
+      {
+        section: "一、形近字與多音字辨別",
+        stem: "關於字詞的寫法，下列哪一個句子中沒有錯別字？",
+        options: [
+          "媽媽在廚房裡煮了一碗熱騰騰的牛肉面條。",
+          "姊姊非常喜歡欣賞表演出色的舞臺劇。",
+          "經過一個晴朗的假日，大家都玩得樂淘淘。",
+          "小明總是會自目自發的幫忙做家事。"
+        ],
+        answer: 1, // ②
+        explanation: "① 面條 →「麵」條；③ 樂淘淘 → 樂「陶陶」；④ 自目自發 → 自「動」自發。",
+        singleCol: true
+      },
+
+      // 二、字義測驗（6~10）
+      {
+        section: "二、字義測驗",
+        stem: "「陶」字有多種解釋，請問「閱讀好書可以陶冶我們的性情」句中的「陶」是什麼意思？",
+        options: [
+          "用黏土燒製的器物",
+          "比喻培養、教育",
+          "快樂的樣子",
+          "姓氏"
+        ],
+        answer: 1, // ②
+        explanation: "陶冶的「陶」解釋為比喻培養、教育。"
+      },
+      {
+        section: "二、字義測驗",
+        stem: "「這道湯完全沒放鹽巴，喝起來索然無味。」句中的「索」意思最接近下列哪一個解釋？",
+        options: [
+          "粗繩，也泛指各種繩子或似繩子、鏈條的東西",
+          "探求、搜尋",
+          "孤獨、疏離",
+          "毫無"
+        ],
+        answer: 3, // ④
+        explanation: "索然無味的「索」解釋為毫無。"
+      },
+      {
+        section: "二、字義測驗",
+        stem: "下列選項中，哪一個「目」字的意思是「列在書本或正文前，以供檢索內容的簡便條文」？",
+        options: [
+          "眉清「目」秀",
+          "頭「目」",
+          "「目」次",
+          "篇「目」"
+        ],
+        answer: 2, // ③
+        explanation: "目次的「目」解釋為列在書本或正文前，以供檢索內容的簡便條文。（① 眼睛；② 首領；④ 名稱、標題）。"
+      },
+      {
+        section: "二、字義測驗",
+        stem: "「奶奶總是一邊織毛衣，一邊念念有詞的叮嚀我們要注意安全。」句中的「念」是什麼意思？",
+        options: [
+          "惦記、懷想",
+          "反反覆覆述說著",
+          "記住",
+          "心思、想法"
+        ],
+        answer: 1, // ②
+        explanation: "念念有詞的「念」解釋為反反覆覆述說著。"
+      },
+      {
+        section: "二、字義測驗",
+        stem: "「斗」字有多種解釋，下列詞語與字義的搭配何者錯誤？",
+        options: [
+          "斗室：形容小",
+          "斗膽：形容大",
+          "斗變：突然、驟變",
+          "漏斗：古代一種量糧食的器具"
+        ],
+        answer: 3, // ④
+        explanation: "古代量糧食的器具為「米斗」；「漏斗」的斗解釋為形狀像斗的器具。"
+      },
+
+      // 三、成語與語詞應用（11~15）
+      {
+        section: "三、成語與語詞應用",
+        stem: "小敏看書的速度非常快，不但（　），而且過目不忘。空格中應填入哪一個成語？",
+        options: [
+          "一目十行",
+          "樂而忘返",
+          "不假思索",
+          "弱不禁風"
+        ],
+        answer: 0, // ①
+        explanation: "「一目十行」形容閱讀速度很快。"
+      },
+      {
+        section: "三、成語與語詞應用",
+        stem: "我和表姐在星空下聊天說笑，玩得（　），直到深夜還捨不得去睡覺。空格中應填入哪一個成語？",
+        options: [
+          "一目十行",
+          "樂而忘返",
+          "不假思索",
+          "弱不禁風"
+        ],
+        answer: 1, // ②
+        explanation: "「樂而忘返」形容歡樂無比而忘了返回。"
+      },
+      {
+        section: "三、成語與語詞應用",
+        stem: "形容一個人「不經思考立即做出反應，說話、反應十分敏捷」，可以使用哪一個成語？",
+        options: [
+          "一目十行",
+          "樂而忘返",
+          "不假思索",
+          "弱不禁風"
+        ],
+        answer: 2, // ③
+        explanation: "「不假思索」指不經思考立即做出反應，形容說話、反應敏捷。"
+      },
+      {
+        section: "三、成語與語詞應用",
+        stem: "別看禹恩長得瘦瘦小小，一副（　）的樣子，他可是全校跑得最快的飛毛腿。空格中應填入哪一個成語？",
+        options: [
+          "一目十行",
+          "樂而忘返",
+          "不假思索",
+          "弱不禁風"
+        ],
+        answer: 3, // ④
+        explanation: "「弱不禁風」形容人身體十分瘦弱。"
+      },
+      {
+        section: "三、成語與語詞應用",
+        stem: "綜合運用題。請問下列哪一個句子中的成語使用最不恰當（錯誤）？",
+        options: [
+          "這個問題非常簡單，大家【不假思索】，立刻按鈴搶答。",
+          "弟弟一看到這本厚重的字典就覺得頭昏腦脹，讀起來真是【一目十行】，半天也翻不了一頁。",
+          "遊樂園裡有許多好玩的設施，讓小朋友們玩得【樂而忘返】。",
+          "她生了一場大病之後，身體變得【弱不禁風】，需要好好休養。"
+        ],
+        answer: 1, // ②
+        explanation: "「一目十行」形容閱讀速度非常快，與句中「覺得頭昏腦脹、半天也翻不了一頁」的語意矛盾，因此用法錯誤。",
+        singleCol: true
+      }
+    ]
+  },
+  {
+    id: "L8",
+    lessonNum: "第八課",
+    title: "第八課隨堂練習",
+    subtitle: "形近字、字義、成語隨堂練習（建置中）",
+    ready: false,
+    questions: []
+  },
+  {
+    id: "L9",
+    lessonNum: "第九課",
+    title: "第九課隨堂練習",
+    subtitle: "形近字、字義、成語隨堂練習（建置中）",
+    ready: false,
+    questions: []
+  },
+  {
+    id: "L10",
+    lessonNum: "第十課",
+    title: "第十課隨堂練習",
+    subtitle: "形近字、字義、成語隨堂練習（建置中）",
+    ready: false,
+    questions: []
+  },
+  {
+    id: "L11",
+    lessonNum: "第十一課",
+    title: "第十一課隨堂練習",
+    subtitle: "形近字、字義、成語隨堂練習（建置中）",
+    ready: false,
+    questions: []
+  },
+  {
+    id: "L12",
+    lessonNum: "第十二課",
+    title: "第十二課隨堂練習",
+    subtitle: "形近字、字義、成語隨堂練習（建置中）",
+    ready: false,
+    questions: []
+  }
+];
+
+const CIRCLED_NUMS = ["①", "②", "③", "④"];
+let currentLesson = null;
+let currentQIndex = 0;
+let userState = {}; // { qIndex: { selected: number | null, revealed: boolean } }
+let isListMode = false;
+let fontScale = 1;
+
+function formatStemHTML(text) {
+  return text
+    .replace(/（　）/g, '<span class="highlight-blank">　</span>')
+    .replace(/【([^】]+)】/g, '<span class="highlight-quote">【$1】</span>');
+}
+
+function renderHome() {
+  const grid = document.getElementById("lesson-grid");
+  grid.innerHTML = LESSONS.map(lesson => `
+    <div class="lesson-card ${lesson.ready ? 'ready' : 'locked'}"
+         onclick="${lesson.ready ? `openLesson('${lesson.id}')` : ''}">
+      <div>
+        <div class="card-top">
+          <span class="lesson-tag">${lesson.lessonNum}</span>
+          <span class="status-pill ${lesson.ready ? 'ready' : 'soon'}">
+            ${lesson.ready ? '✅ 已上線・共 15 題' : '⏳ 待建立'}
+          </span>
+        </div>
+        <div class="lesson-name" style="margin-top:16px;">${lesson.title}</div>
+        <div class="lesson-desc" style="margin-top:6px;">${lesson.subtitle}</div>
+      </div>
+      <button class="start-btn" ${lesson.ready ? '' : 'disabled'}>
+        ${lesson.ready ? '▶ 進入課堂隨堂測驗' : '敬請期待'}
+      </button>
+    </div>
+  `).join("");
+}
+
+function openLesson(lessonId) {
+  const lesson = LESSONS.find(l => l.id === lessonId);
+  if (!lesson || !lesson.ready) return;
+  currentLesson = lesson;
+  currentQIndex = 0;
+  userState = {};
+  isListMode = false;
+
+  document.getElementById("home-view").style.display = "none";
+  document.getElementById("quiz-view").style.display = "block";
+  document.getElementById("btn-home").style.display = "inline-flex";
+  document.getElementById("btn-mode-toggle").style.display = "inline-flex";
+  document.getElementById("btn-mode-toggle").textContent = "📋 切換全卷檢視";
+  document.getElementById("single-stage-container").style.display = "block";
+  document.getElementById("list-mode-container").style.display = "none";
+
+  document.getElementById("quiz-lesson-title").textContent = `${lesson.lessonNum}《${lesson.title}》隨堂練習`;
+  renderQuestionStage();
+}
+
+function goHome() {
+  currentLesson = null;
+  document.getElementById("home-view").style.display = "block";
+  document.getElementById("quiz-view").style.display = "none";
+  document.getElementById("btn-home").style.display = "none";
+  document.getElementById("btn-mode-toggle").style.display = "none";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderDots() {
+  const dotsEl = document.getElementById("q-dots");
+  dotsEl.innerHTML = currentLesson.questions.map((q, idx) => {
+    const st = userState[idx];
+    let cls = "q-dot";
+    if (!isListMode && idx === currentQIndex) cls += " current";
+    if (st && st.selected !== null) {
+      cls += (st.selected === q.answer) ? " answered-correct" : " answered-wrong";
+    } else if (st && st.revealed) {
+      cls += " answered-correct";
+    }
+    return `<button class="${cls}" onclick="jumpToQuestion(${idx})">${idx + 1}</button>`;
+  }).join("");
+}
+
+function renderQuestionStage() {
+  if (!currentLesson) return;
+  const q = currentLesson.questions[currentQIndex];
+  const st = userState[currentQIndex] || { selected: null, revealed: false };
+
+  document.getElementById("quiz-category-badge").textContent = q.section;
+  renderDots();
+
+  const stemEl = document.getElementById("stage-stem");
+  stemEl.innerHTML = `<span class="question-num-pill">第 ${currentQIndex + 1} 題</span>${formatStemHTML(q.stem)}`;
+
+  const optsEl = document.getElementById("stage-options");
+  optsEl.className = "options-grid" + (q.singleCol || q.options.some(o => o.length > 16) ? " single-col" : "");
+
+  optsEl.innerHTML = q.options.map((optText, optIdx) => {
+    let btnClass = "option-btn";
+    if (st.revealed) {
+      if (optIdx === q.answer) btnClass += " correct";
+      else if (st.selected === optIdx) btnClass += " wrong";
+    }
+    return `
+      <button class="${btnClass}" onclick="selectOption(${currentQIndex}, ${optIdx})">
+        <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+        <span>${formatStemHTML(optText)}</span>
+      </button>
+    `;
+  }).join("");
+
+  const expBox = document.getElementById("stage-exp");
+  const expHeader = document.getElementById("stage-exp-header");
+  const expBody = document.getElementById("stage-exp-body");
+
+  if (st.revealed) {
+    expBox.classList.add("show");
+    if (st.selected === null) {
+      expHeader.textContent = `💡 正確答案：${CIRCLED_NUMS[q.answer]}`;
+    } else if (st.selected === q.answer) {
+      expHeader.textContent = `🎉 答對了！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
+    } else {
+      expHeader.textContent = `❌ 答錯囉！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
+    }
+    expBody.textContent = q.explanation;
+  } else {
+    expBox.classList.remove("show");
+  }
+
+  document.getElementById("btn-prev").disabled = (currentQIndex === 0);
+  document.getElementById("btn-next").disabled = (currentQIndex === currentLesson.questions.length - 1);
+}
+
+function selectOption(qIdx, optIdx) {
+  userState[qIdx] = { selected: optIdx, revealed: true };
+  if (isListMode) {
+    renderListMode();
+    renderDots();
+  } else {
+    renderQuestionStage();
+  }
+}
+
+function revealCurrentAnswer() {
+  const prev = userState[currentQIndex] || { selected: null, revealed: false };
+  userState[currentQIndex] = { selected: prev.selected, revealed: !prev.revealed };
+  renderQuestionStage();
+}
+
+function resetCurrentQuestion() {
+  delete userState[currentQIndex];
+  renderQuestionStage();
+}
+
+function resetAllQuestions() {
+  userState = {};
+  if (isListMode) {
+    renderListMode();
+    renderDots();
+  } else {
+    renderQuestionStage();
+  }
+}
+
+function jumpToQuestion(idx) {
+  currentQIndex = idx;
+  if (isListMode) {
+    const target = document.getElementById(`list-q-${idx}`);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+  } else {
+    renderQuestionStage();
+  }
+}
+
+function prevQuestion() {
+  if (currentQIndex > 0) {
+    currentQIndex--;
+    renderQuestionStage();
+  }
+}
+
+function nextQuestion() {
+  if (currentLesson && currentQIndex < currentLesson.questions.length - 1) {
+    currentQIndex++;
+    renderQuestionStage();
+  }
+}
+
+function toggleDisplayMode() {
+  isListMode = !isListMode;
+  const btn = document.getElementById("btn-mode-toggle");
+  const singleEl = document.getElementById("single-stage-container");
+  const listEl = document.getElementById("list-mode-container");
+
+  if (isListMode) {
+    btn.textContent = "🖥 切換單題投影";
+    singleEl.style.display = "none";
+    listEl.style.display = "flex";
+    renderListMode();
+    renderDots();
+  } else {
+    btn.textContent = "📋 切換全卷檢視";
+    singleEl.style.display = "block";
+    listEl.style.display = "none";
+    renderQuestionStage();
+  }
+}
+
+function renderListMode() {
+  if (!currentLesson) return;
+  const container = document.getElementById("list-mode-container");
+  let lastSection = "";
+  let html = "";
+
+  currentLesson.questions.forEach((q, idx) => {
+    if (q.section !== lastSection) {
+      lastSection = q.section;
+      html += `<div class="section-banner">${q.section}</div>`;
+    }
+    const st = userState[idx] || { selected: null, revealed: false };
+    const singleCol = q.singleCol || q.options.some(o => o.length > 16);
+
+    const optsHtml = q.options.map((optText, optIdx) => {
+      let btnClass = "option-btn";
+      if (st.revealed) {
+        if (optIdx === q.answer) btnClass += " correct";
+        else if (st.selected === optIdx) btnClass += " wrong";
+      }
+      return `
+        <button class="${btnClass}" onclick="selectOption(${idx}, ${optIdx})">
+          <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+          <span>${formatStemHTML(optText)}</span>
+        </button>
+      `;
+    }).join("");
+
+    let expHeaderText = `💡 正確答案：${CIRCLED_NUMS[q.answer]}`;
+    if (st.selected !== null) {
+      expHeaderText = (st.selected === q.answer)
+        ? `🎉 答對了！正確答案是 ${CIRCLED_NUMS[q.answer]}`
+        : `❌ 答錯囉！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
+    }
+
+    html += `
+      <div class="stage-card" id="list-q-${idx}" style="margin-bottom:0;">
+        <div class="question-stem">
+          <span class="question-num-pill">第 ${idx + 1} 題</span>${formatStemHTML(q.stem)}
+        </div>
+        <div class="options-grid ${singleCol ? 'single-col' : ''}">
+          ${optsHtml}
+        </div>
+        <div class="explanation-box ${st.revealed ? 'show' : ''}">
+          <div class="exp-header">${expHeaderText}</div>
+          <div class="exp-body">${q.explanation}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function adjustFontSize(delta) {
+  if (delta === 0) {
+    fontScale = 1;
+  } else {
+    fontScale = Math.min(1.45, Math.max(0.8, +(fontScale + delta).toFixed(2)));
+  }
+  document.documentElement.style.setProperty("--font-scale", fontScale);
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+// 鍵盤快捷鍵支援（方便老師在講台用簡報筆或鍵盤操作）
+window.addEventListener("keydown", (e) => {
+  if (!currentLesson || isListMode) return;
+  if (e.key === "ArrowRight" || e.key === "PageDown") {
+    e.preventDefault();
+    nextQuestion();
+  } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+    e.preventDefault();
+    prevQuestion();
+  } else if (["1", "2", "3", "4"].includes(e.key)) {
+    e.preventDefault();
+    selectOption(currentQIndex, parseInt(e.key, 10) - 1);
+  } else if (e.key === " ") {
+    e.preventDefault();
+    revealCurrentAnswer();
+  }
+});
+
+// 初始化首頁
+renderHome();
+</script>
+</body>
+</html>
