@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-<title>國語隨堂練習互動網（第七課～第十二課）</title>
+<title>國語隨堂練習與線上測驗互動網</title>
 <style>
   :root {
     --bg: #eef4fa;
@@ -68,13 +68,13 @@
     background: #fbbf24;
     color: #1e3a8a;
     font-weight: 900;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     padding: 4px 12px;
     border-radius: 999px;
   }
 
   .brand-title {
-    font-size: 1.65rem;
+    font-size: 1.6rem;
     font-weight: 900;
     letter-spacing: 0.5px;
   }
@@ -99,6 +99,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    text-decoration: none;
   }
 
   .tool-btn:hover {
@@ -106,30 +107,36 @@
     transform: translateY(-1px);
   }
 
-  .tool-btn.active {
-    background: #fbbf24;
-    color: #1e3a8a;
-    border-color: #fbbf24;
+  .tool-btn.highlight {
+    background: #f59e0b;
+    border-color: #d97706;
+    color: #fff;
+  }
+  .tool-btn.highlight:hover {
+    background: #d97706;
   }
 
-  /* 主容器 */
   main {
     max-width: 1440px;
     margin: 0 auto;
-    padding: 28px 24px 60px;
+    padding: 24px 20px 60px;
   }
 
-  /* 首頁：課次選擇畫面 */
-  #home-view {
+  /* 視圖切換容器 */
+  .view-panel {
+    display: none;
+  }
+  .view-panel.active {
     display: block;
   }
 
+  /* 首頁 Banner */
   .hero-banner {
     background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
     color: #fff;
     border-radius: 24px;
-    padding: 36px 40px;
-    margin-bottom: 32px;
+    padding: 32px 36px;
+    margin-bottom: 28px;
     box-shadow: 0 12px 28px rgba(30, 64, 175, 0.18);
     display: flex;
     align-items: center;
@@ -139,13 +146,13 @@
   }
 
   .hero-banner h1 {
-    font-size: calc(2.4rem * var(--font-scale));
+    font-size: calc(2.3rem * var(--font-scale));
     font-weight: 900;
     margin-bottom: 8px;
   }
 
   .hero-banner p {
-    font-size: calc(1.35rem * var(--font-scale));
+    font-size: calc(1.3rem * var(--font-scale));
     color: #dbeafe;
     font-weight: 600;
   }
@@ -160,26 +167,17 @@
     background: var(--surface);
     border: 3px solid #cbd5e1;
     border-radius: 22px;
-    padding: 28px 30px;
+    padding: 28px 26px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 18px;
     transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
   }
 
   .lesson-card.ready {
     border-color: #3b82f6;
-    cursor: pointer;
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-  }
-
-  .lesson-card.ready:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 32px rgba(30, 64, 175, 0.16);
-    border-color: #1d4ed8;
   }
 
   .lesson-card.locked {
@@ -196,193 +194,122 @@
   }
 
   .lesson-tag {
-    font-size: calc(1.25rem * var(--font-scale));
+    font-size: calc(1.2rem * var(--font-scale));
     font-weight: 900;
-    padding: 6px 16px;
+    padding: 5px 14px;
     border-radius: 999px;
     background: #dbeafe;
     color: #1e40af;
   }
 
-  .lesson-card.locked .lesson-tag {
-    background: #e2e8f0;
-    color: #64748b;
-  }
-
   .status-pill {
     font-size: 1.05rem;
     font-weight: 800;
-    padding: 5px 14px;
+    padding: 4px 12px;
     border-radius: 999px;
   }
-
-  .status-pill.ready {
-    background: #dcfce7;
-    color: #15803d;
-  }
-
-  .status-pill.soon {
-    background: #e2e8f0;
-    color: #475569;
-  }
+  .status-pill.ready { background: #dcfce7; color: #15803d; }
+  .status-pill.soon { background: #e2e8f0; color: #475569; }
 
   .lesson-name {
-    font-size: calc(2.1rem * var(--font-scale));
+    font-size: calc(2.05rem * var(--font-scale));
     font-weight: 900;
     color: var(--text);
   }
 
   .lesson-desc {
-    font-size: calc(1.2rem * var(--font-scale));
+    font-size: calc(1.15rem * var(--font-scale));
     color: var(--text-muted);
     font-weight: 600;
   }
 
-  .start-btn {
-    margin-top: 6px;
-    background: #1e40af;
-    color: #fff;
-    border: none;
+  .card-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    flex: 1;
+    min-width: 140px;
+    padding: 14px 16px;
     border-radius: 14px;
-    padding: 14px 22px;
-    font-size: calc(1.35rem * var(--font-scale));
+    font-size: calc(1.25rem * var(--font-scale));
     font-weight: 900;
+    border: none;
     cursor: pointer;
     text-align: center;
-    transition: background 0.15s;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
 
-  .lesson-card.ready:hover .start-btn {
-    background: #1d4ed8;
+  .action-btn.proj {
+    background: #2563eb;
+    color: #fff;
   }
+  .action-btn.proj:hover { background: #1d4ed8; transform: translateY(-2px); }
 
-  .lesson-card.locked .start-btn {
+  .action-btn.exam {
+    background: #059669;
+    color: #fff;
+  }
+  .action-btn.exam:hover { background: #047857; transform: translateY(-2px); }
+
+  .action-btn:disabled {
     background: #cbd5e1;
     color: #64748b;
     cursor: not-allowed;
+    transform: none;
   }
 
-  /* 測驗畫面 */
-  #quiz-view {
-    display: none;
+  /* 台灣標準直書注音排版 */
+  .zhuyin-box {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    background: #eff6ff;
+    border: 2px solid #93c5fd;
+    border-radius: 12px;
+    padding: 6px 10px 6px 12px;
+    margin: 2px 6px;
+    line-height: 1;
   }
 
-  /* 大題與題號導覽列 */
-  .quiz-nav-panel {
-    background: var(--surface);
-    border-radius: 20px;
-    padding: 18px 24px;
-    margin-bottom: 22px;
-    border: 2px solid #cbd5e1;
+  .zhuyin-phonemes {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-  }
-
-  .quiz-header-row {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .quiz-lesson-title {
-    font-size: calc(1.85rem * var(--font-scale));
+    justify-content: center;
+    font-size: 0.78em;
+    line-height: 1.05;
     font-weight: 900;
-    color: #1e3a8a;
+    letter-spacing: 0;
   }
 
-  .category-badge {
-    background: #fef3c7;
-    color: #92400e;
-    border: 2px solid #f59e0b;
-    padding: 6px 18px;
-    border-radius: 999px;
-    font-size: calc(1.3rem * var(--font-scale));
-    font-weight: 900;
-  }
+  .zhuyin-phonemes span { display: block; text-align: center; }
 
-  .q-dots {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
-    gap: 8px;
-  }
-
-  @media (max-width: 900px) {
-    .q-dots {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-    }
-  }
-
-  .q-dot {
-    height: 46px;
-    border-radius: 10px;
-    border: 2px solid #cbd5e1;
-    background: #f8fafc;
-    color: #334155;
-    font-size: 1.25rem;
-    font-weight: 900;
-    cursor: pointer;
-    transition: all 0.15s;
+  .zhuyin-tone-side {
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .q-dot:hover {
-    border-color: #1e40af;
-    background: #eff6ff;
-  }
-
-  .q-dot.current {
-    background: #1e40af;
-    color: #fff;
-    border-color: #1e3a8a;
-    transform: scale(1.07);
-    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
-  }
-
-  .q-dot.answered-correct {
-    background: #dcfce7;
-    border-color: #16a34a;
-    color: #14532d;
-  }
-
-  .q-dot.answered-wrong {
-    background: #fee2e2;
-    border-color: #dc2626;
-    color: #7f1d1d;
-  }
-
-  /* 投影模式：單題巨型字卡 */
-  .stage-card {
-    background: var(--surface);
-    border-radius: 26px;
-    padding: 36px 42px;
-    border: 3px solid #94a3b8;
-    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-    margin-bottom: 24px;
-  }
-
-  .question-stem {
-    font-size: calc(2.45rem * var(--font-scale));
+    font-size: 0.75em;
     font-weight: 900;
-    color: #0f172a;
-    line-height: 1.55;
-    margin-bottom: 32px;
-    letter-spacing: 0.5px;
+    margin-left: 2px;
+    line-height: 1;
+    align-self: center;
   }
 
-  .question-num-pill {
-    display: inline-block;
-    background: #1e40af;
-    color: #fff;
-    font-size: calc(1.9rem * var(--font-scale));
-    padding: 4px 18px;
-    border-radius: 14px;
-    margin-right: 14px;
-    vertical-align: middle;
+  .zhuyin-tone-light {
+    font-size: 0.65em;
+    font-weight: 900;
+    line-height: 0.6;
+    margin-bottom: 2px;
   }
 
   .highlight-blank {
@@ -404,87 +331,188 @@
     border-radius: 8px;
   }
 
-  /* 台灣教育部標準直書注音排版 */
-  .zhuyin-box {
-    display: inline-flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    vertical-align: middle;
-    background: #eff6ff;
-    border: 2px solid #93c5fd;
-    border-radius: 12px;
-    padding: 6px 10px 6px 12px;
-    margin: 2px 6px;
-    line-height: 1;
+  /* ==================== 學生考試登入頁面 ==================== */
+  .login-card {
+    max-width: 620px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 24px;
+    border: 3.5px solid #2563eb;
+    padding: 40px 36px;
+    box-shadow: 0 18px 40px rgba(37, 99, 235, 0.12);
   }
 
-  .option-btn.correct .zhuyin-box {
-    background: rgba(255, 255, 255, 0.75);
-    border-color: #16a34a;
-  }
-
-  .option-btn.wrong .zhuyin-box {
-    background: rgba(255, 255, 255, 0.75);
-    border-color: #dc2626;
-  }
-
-  .zhuyin-phonemes {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.78em;
-    line-height: 1.05;
-    font-weight: 900;
-    letter-spacing: 0;
-  }
-
-  .zhuyin-phonemes span {
-    display: block;
+  .login-header {
     text-align: center;
+    margin-bottom: 28px;
+  }
+  .login-header h2 {
+    font-size: calc(2.2rem * var(--font-scale));
+    color: #1e3a8a;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .login-header p {
+    font-size: calc(1.25rem * var(--font-scale));
+    color: #64748b;
+    font-weight: 600;
   }
 
-  .zhuyin-tone-side {
+  .form-group {
+    margin-bottom: 22px;
+  }
+  .form-group label {
+    display: block;
+    font-size: calc(1.35rem * var(--font-scale));
+    font-weight: 900;
+    color: #1e293b;
+    margin-bottom: 8px;
+  }
+  .form-control {
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 14px;
+    border: 2.5px solid #cbd5e1;
+    font-size: calc(1.4rem * var(--font-scale));
+    font-weight: 800;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-control:focus {
+    border-color: #2563eb;
+    background: #fff;
+  }
+
+  .btn-submit-login {
+    width: 100%;
+    padding: 18px;
+    border-radius: 16px;
+    background: #059669;
+    color: #fff;
+    font-size: calc(1.6rem * var(--font-scale));
+    font-weight: 900;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.3);
+    transition: all 0.15s;
+    margin-top: 10px;
+  }
+  .btn-submit-login:hover {
+    background: #047857;
+    transform: translateY(-2px);
+  }
+
+  /* ==================== 學生線上考試介面 ==================== */
+  .exam-bar {
+    background: #1e3a8a;
+    color: #fff;
+    border-radius: 18px;
+    padding: 18px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .exam-student-badge {
+    font-size: calc(1.4rem * var(--font-scale));
+    font-weight: 900;
+    background: #fbbf24;
+    color: #1e3a8a;
+    padding: 6px 18px;
+    border-radius: 999px;
+  }
+  .exam-progress-text {
+    font-size: calc(1.3rem * var(--font-scale));
+    font-weight: 800;
+    color: #dbeafe;
+  }
+
+  /* 題號方塊選單 */
+  .q-dots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .q-dot {
+    height: 48px;
+    border-radius: 12px;
+    border: 2px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    font-size: calc(1.25rem * var(--font-scale));
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75em;
-    font-weight: 900;
-    margin-left: 2px;
-    line-height: 1;
-    align-self: center;
+  }
+  .q-dot.current {
+    background: #1e40af;
+    color: #fff;
+    border-color: #1e3a8a;
+    transform: scale(1.08);
+    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
+  }
+  .q-dot.answered {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e40af;
   }
 
-  .zhuyin-tone-light {
-    font-size: 0.65em;
+  /* 巨型字卡 */
+  .stage-card {
+    background: var(--surface);
+    border-radius: 26px;
+    padding: 34px 38px;
+    border: 3px solid #94a3b8;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+    margin-bottom: 24px;
+  }
+
+  .question-stem {
+    font-size: calc(2.35rem * var(--font-scale));
     font-weight: 900;
-    line-height: 0.6;
-    margin-bottom: 2px;
+    color: #0f172a;
+    line-height: 1.55;
+    margin-bottom: 30px;
+    letter-spacing: 0.5px;
+  }
+
+  .question-num-pill {
+    display: inline-block;
+    background: #1e40af;
+    color: #fff;
+    font-size: calc(1.85rem * var(--font-scale));
+    padding: 4px 16px;
+    border-radius: 14px;
+    margin-right: 14px;
+    vertical-align: middle;
   }
 
   .options-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+    gap: 18px;
   }
-
   .options-grid.single-col {
     grid-template-columns: 1fr;
   }
-
   @media (max-width: 960px) {
-    .options-grid {
-      grid-template-columns: 1fr;
-    }
+    .options-grid { grid-template-columns: 1fr; }
   }
 
   .option-btn {
     background: #f8fafc;
     border: 3.5px solid #cbd5e1;
-    border-radius: 20px;
-    padding: 22px 28px;
-    font-size: calc(2.05rem * var(--font-scale));
+    border-radius: 18px;
+    padding: 20px 24px;
+    font-size: calc(2rem * var(--font-scale));
     font-weight: 800;
     color: #1e293b;
     text-align: left;
@@ -495,107 +523,90 @@
     transition: all 0.15s ease;
     line-height: 1.4;
   }
-
   .option-btn:hover {
     border-color: #2563eb;
     background: #eff6ff;
     transform: translateY(-2px);
   }
-
+  .option-btn.selected-student {
+    background: #dbeafe;
+    border-color: #2563eb;
+    color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  }
   .opt-index {
     flex-shrink: 0;
-    width: calc(3.2rem * var(--font-scale));
-    height: calc(3.2rem * var(--font-scale));
+    width: calc(3rem * var(--font-scale));
+    height: calc(3rem * var(--font-scale));
     border-radius: 50%;
     background: #e2e8f0;
     color: #1e293b;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(1.85rem * var(--font-scale));
+    font-size: calc(1.8rem * var(--font-scale));
     font-weight: 900;
   }
+  .option-btn.selected-student .opt-index {
+    background: #2563eb;
+    color: #fff;
+  }
 
+  /* 課堂投影複習時的對錯樣式 */
   .option-btn.correct {
-    background: var(--correct-bg);
-    border-color: var(--correct-border);
-    color: var(--correct-text);
-    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.2);
+    background: var(--correct-bg) !important;
+    border-color: var(--correct-border) !important;
+    color: var(--correct-text) !important;
   }
-
-  .option-btn.correct .opt-index {
-    background: #16a34a;
-    color: #fff;
-  }
-
+  .option-btn.correct .opt-index { background: #16a34a; color: #fff; }
   .option-btn.wrong {
-    background: var(--wrong-bg);
-    border-color: var(--wrong-border);
-    color: var(--wrong-text);
+    background: var(--wrong-bg) !important;
+    border-color: var(--wrong-border) !important;
+    color: var(--wrong-text) !important;
   }
-
-  .option-btn.wrong .opt-index {
-    background: #dc2626;
-    color: #fff;
-  }
+  .option-btn.wrong .opt-index { background: #dc2626; color: #fff; }
 
   /* 詳解卡片 */
   .explanation-box {
-    margin-top: 28px;
+    margin-top: 24px;
     background: #fffbeb;
     border: 3px solid #f59e0b;
-    border-radius: 20px;
-    padding: 24px 30px;
+    border-radius: 18px;
+    padding: 22px 28px;
     display: none;
-    animation: fadeIn 0.2s ease;
   }
-
-  .explanation-box.show {
-    display: block;
-  }
-
+  .explanation-box.show { display: block; }
   .exp-header {
-    font-size: calc(1.65rem * var(--font-scale));
+    font-size: calc(1.6rem * var(--font-scale));
     font-weight: 900;
     color: #b45309;
     margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
   }
-
   .exp-body {
-    font-size: calc(1.85rem * var(--font-scale));
+    font-size: calc(1.8rem * var(--font-scale));
     font-weight: 700;
     color: #1e293b;
     line-height: 1.55;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* 底部控制列 */
   .stage-controls {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+    margin-top: 10px;
   }
-
   .ctrl-group {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
   }
-
   .ctrl-btn {
-    padding: 16px 28px;
+    padding: 15px 26px;
     border-radius: 16px;
-    font-size: calc(1.5rem * var(--font-scale));
+    font-size: calc(1.45rem * var(--font-scale));
     font-weight: 900;
     border: 2.5px solid #cbd5e1;
     background: #fff;
@@ -604,61 +615,84 @@
     transition: all 0.15s;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
-
   .ctrl-btn:hover:not(:disabled) {
     border-color: #1e40af;
     background: #eff6ff;
   }
-
   .ctrl-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }
-
   .ctrl-btn.primary {
     background: #1e40af;
     color: #fff;
     border-color: #1e3a8a;
   }
-
-  .ctrl-btn.primary:hover:not(:disabled) {
-    background: #1d4ed8;
+  .ctrl-btn.primary:hover:not(:disabled) { background: #1d4ed8; }
+  .ctrl-btn.success {
+    background: #059669;
+    color: #fff;
+    border-color: #047857;
   }
-
+  .ctrl-btn.success:hover:not(:disabled) { background: #047857; }
   .ctrl-btn.reveal {
     background: #f59e0b;
     color: #fff;
     border-color: #d97706;
   }
 
-  .ctrl-btn.reveal:hover {
-    background: #d97706;
+  /* ==================== 測驗成績與訂正畫面 ==================== */
+  .result-card {
+    max-width: 800px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 26px;
+    border: 4px solid #059669;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 16px 36px rgba(5, 150, 105, 0.15);
+  }
+  .result-score-title {
+    font-size: calc(1.8rem * var(--font-scale));
+    color: #065f46;
+    font-weight: 900;
+    margin-bottom: 12px;
+  }
+  .result-score-num {
+    font-size: calc(4.8rem * var(--font-scale));
+    font-weight: 900;
+    color: #059669;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .result-desc {
+    font-size: calc(1.4rem * var(--font-scale));
+    color: #475569;
+    font-weight: 700;
+    margin-bottom: 28px;
+  }
+  .result-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
   }
 
-  /* 全卷一覽模式 */
-  #list-mode-container {
-    display: none;
+  /* 訂正試卷列表 */
+  .review-sheet-wrap {
+    margin-top: 32px;
+    display: flex;
     flex-direction: column;
     gap: 24px;
-  }
-
-  .section-banner {
-    background: #1e3a8a;
-    color: #fff;
-    padding: 16px 26px;
-    border-radius: 16px;
-    font-size: calc(1.75rem * var(--font-scale));
-    font-weight: 900;
-    margin-top: 12px;
   }
 
   .keyboard-hint {
     text-align: center;
     margin-top: 22px;
     color: #64748b;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 700;
   }
 </style>
@@ -667,167 +701,243 @@
 
 <header>
   <div class="brand" onclick="goHome()" title="返回課次選擇首頁">
-    <span class="brand-badge">國語隨堂練</span>
-    <span class="brand-title">第七課～第十二課 課堂互動測驗網</span>
+    <span class="brand-badge">潮和402 國語隨堂練</span>
+    <span class="brand-title">第七課～第十二課 課堂互動與線上測驗</span>
   </div>
   <div class="toolbar">
-    <button class="tool-btn" id="btn-home" onclick="goHome()" style="display:none;">🏠 返回選課首頁</button>
-    <button class="tool-btn" id="btn-mode-toggle" onclick="toggleDisplayMode()" style="display:none;">📋 切換全卷檢視</button>
+    <button class="tool-btn" id="btn-home" onclick="goHome()" style="display:none;">🏠 回首頁</button>
+    <a class="tool-btn highlight" href="teacher.html" target="_blank">👩‍🏫 教師後台</a>
     <button class="tool-btn" onclick="adjustFontSize(-0.1)" title="縮小字體">A-</button>
-    <button class="tool-btn" onclick="adjustFontSize(0)" title="標準字體">標準字級</button>
+    <button class="tool-btn" onclick="adjustFontSize(0)" title="標準字體">標準</button>
     <button class="tool-btn" onclick="adjustFontSize(0.12)" title="放大字體">A+</button>
-    <button class="tool-btn" onclick="toggleFullscreen()">⛶ 全螢幕投影</button>
+    <button class="tool-btn" onclick="toggleFullscreen()">⛶ 全螢幕</button>
   </div>
 </header>
 
 <main>
-  <!-- 第一個畫面：選擇課次首頁 -->
-  <section id="home-view">
+  <!-- 視圖 1：課次選擇首頁 -->
+  <section id="view-home" class="view-panel active">
     <div class="hero-banner">
       <div>
-        <h1>國語文隨堂練習（第七課～第十二課）</h1>
-        <p>專為課堂大螢幕投影設計・點擊選項即時批改與顯示詳解・無計分壓力</p>
+        <h1>國語文隨堂練習與線上測驗</h1>
+        <p>提供「課堂大字投影複習」與「學生線上考試＋後台接收數據」雙模式</p>
       </div>
+      <a class="tool-btn highlight" href="teacher.html" style="font-size:1.3rem;padding:12px 24px;">📊 進入教師成績後台 →</a>
     </div>
 
     <div class="lesson-grid" id="lesson-grid"></div>
   </section>
 
-  <!-- 第二個畫面：課堂投影測驗畫面 -->
-  <section id="quiz-view">
-    <div class="quiz-nav-panel">
-      <div class="quiz-header-row">
-        <div class="quiz-lesson-title" id="quiz-lesson-title">第七課 到此「藝」遊</div>
-        <div class="category-badge" id="quiz-category-badge">一、形近字與多音字辨別</div>
+  <!-- 視圖 2：學生考試登入畫面（座號 1~29 下拉選單） -->
+  <section id="view-exam-login" class="view-panel">
+    <div class="login-card">
+      <div class="login-header">
+        <h2 id="login-lesson-title">第七課 到此「藝」遊</h2>
+        <p>請確認您的班級與座號，即可開始進行線上測驗</p>
       </div>
-      <div class="q-dots" id="q-dots"></div>
+      <form id="student-login-form" onsubmit="startStudentExam(event)">
+        <div class="form-group">
+          <label for="student-class">班級</label>
+          <select id="student-class" class="form-control">
+            <option value="4-2" selected>四年二班 (4-2)</option>
+            <option value="4-1">四年一班 (4-1)</option>
+            <option value="4-3">四年三班 (4-3)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="student-seat">座號（1～29 號）</label>
+          <select id="student-seat" class="form-control" required>
+            <option value="" disabled selected>-- 請選擇您的座號 --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="student-name">姓名（選填）</label>
+          <input type="text" id="student-name" class="form-control" placeholder="請輸入姓名（可不填）">
+        </div>
+        <button type="submit" class="btn-submit-login">🚀 開始線上測驗</button>
+        <button type="button" class="ctrl-btn" style="width:100%;margin-top:14px;justify-content:center;" onclick="goHome()">取消，返回首頁</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 視圖 3：課堂投影複習 模式（即時點擊看答案、大字投影） -->
+  <section id="view-projector" class="view-panel">
+    <div style="background:#fff;border-radius:18px;padding:16px 24px;margin-bottom:20px;border:2px solid #cbd5e1;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <span style="font-size:calc(1.8rem * var(--font-scale));font-weight:900;color:#1e3a8a;" id="proj-lesson-title"></span>
+        <span style="background:#fef3c7;color:#92400e;padding:4px 14px;border-radius:999px;font-weight:800;font-size:1.15rem;margin-left:12px;" id="proj-section-badge"></span>
+      </div>
+      <button class="ctrl-btn" onclick="toggleProjListMode()" id="btn-proj-list-toggle">📋 切換全卷檢視</button>
     </div>
 
-    <!-- 單題投影舞台模式 -->
-    <div id="single-stage-container">
+    <div class="q-dots" id="proj-q-dots"></div>
+
+    <div id="proj-single-container">
       <div class="stage-card">
-        <div class="question-stem" id="stage-stem"></div>
-        <div class="options-grid" id="stage-options"></div>
-        <div class="explanation-box" id="stage-exp">
-          <div class="exp-header" id="stage-exp-header">💡 答案與解析</div>
-          <div class="exp-body" id="stage-exp-body"></div>
+        <div class="question-stem" id="proj-stem"></div>
+        <div class="options-grid" id="proj-options"></div>
+        <div class="explanation-box" id="proj-exp">
+          <div class="exp-header" id="proj-exp-header"></div>
+          <div class="exp-body" id="proj-exp-body"></div>
         </div>
       </div>
-
       <div class="stage-controls">
         <div class="ctrl-group">
-          <button class="ctrl-btn" id="btn-prev" onclick="prevQuestion()">⬅ 上一題</button>
-          <button class="ctrl-btn primary" id="btn-next" onclick="nextQuestion()">下一題 ➡</button>
+          <button class="ctrl-btn" id="btn-proj-prev" onclick="prevProjQuestion()">⬅ 上一題</button>
+          <button class="ctrl-btn primary" id="btn-proj-next" onclick="nextProjQuestion()">下一題 ➡</button>
         </div>
         <div class="ctrl-group">
-          <button class="ctrl-btn reveal" onclick="revealCurrentAnswer()">💡 直接公佈答案與解析</button>
-          <button class="ctrl-btn" onclick="resetCurrentQuestion()">🔄 重置本題</button>
-          <button class="ctrl-btn" onclick="resetAllQuestions()">🧹 全部重作</button>
+          <button class="ctrl-btn reveal" onclick="revealProjAnswer()">💡 直接公佈答案與解析</button>
+          <button class="ctrl-btn" onclick="resetProjQuestion()">🔄 重置本題</button>
+          <button class="ctrl-btn" onclick="goHome()">🏠 退出複習</button>
         </div>
       </div>
       <div class="keyboard-hint">
-        ⌨️ 課堂快捷鍵：按 <b>← / →</b> 切換上、下一題 ｜ 按數字鍵 <b>1～4</b> 直接作答 ｜ 按 <b>空白鍵</b> 公佈解析
+        ⌨️ 課堂快捷鍵：按 <b>← / →</b> 換題 ｜ 按數字鍵 <b>1～4</b> 作答 ｜ 按 <b>空白鍵</b> 公佈解析
       </div>
     </div>
 
-    <!-- 全卷一覽模式（供老師快速捲動檢討） -->
-    <div id="list-mode-container"></div>
+    <div id="proj-list-container" style="display:none;flex-direction:column;gap:24px;"></div>
+  </section>
+
+  <!-- 視圖 4：學生正式線上測驗 模式（無即時答案、防呆交卷、送出至 Supabase） -->
+  <section id="view-exam-test" class="view-panel">
+    <div class="exam-bar">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span class="exam-student-badge" id="exam-badge-info">4-2 班 01 號</span>
+        <span style="font-size:calc(1.4rem * var(--font-scale));font-weight:900;" id="exam-test-lesson-title">第七課 線上隨堂測驗</span>
+      </div>
+      <div class="exam-progress-text" id="exam-progress-text">已作答 0 / 15 題</div>
+    </div>
+
+    <!-- 題號快選列 -->
+    <div class="q-dots" id="exam-q-dots"></div>
+
+    <div class="stage-card">
+      <div class="question-stem" id="exam-stem"></div>
+      <div class="options-grid" id="exam-options"></div>
+    </div>
+
+    <div class="stage-controls">
+      <div class="ctrl-group">
+        <button class="ctrl-btn" id="btn-exam-prev" onclick="prevExamQuestion()">⬅ 上一題</button>
+        <button class="ctrl-btn primary" id="btn-exam-next" onclick="nextExamQuestion()">下一題 ➡</button>
+      </div>
+      <div class="ctrl-group">
+        <button class="ctrl-btn success" id="btn-submit-exam" onclick="confirmSubmitExam()" style="font-size:calc(1.5rem * var(--font-scale));">
+          📝 檢查並交卷
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 視圖 5：測驗結果與訂正畫面 -->
+  <section id="view-exam-result" class="view-panel">
+    <div class="result-card">
+      <div class="result-score-title" id="res-student-header">測驗已送出！</div>
+      <div class="result-score-num" id="res-score-num">100 分</div>
+      <div class="result-desc" id="res-desc">共 15 題，答對 15 題，答錯 0 題</div>
+      <div class="result-actions">
+        <button class="ctrl-btn primary" onclick="showCorrectionSheet()" style="font-size:1.35rem;">🔍 查看完整試卷訂正與詳解</button>
+        <button class="ctrl-btn" onclick="goHome()" style="font-size:1.35rem;">🏠 返回選課首頁</button>
+      </div>
+    </div>
+
+    <!-- 學生個人訂正詳解清單 -->
+    <div id="correction-sheet" style="display:none;" class="review-sheet-wrap"></div>
   </section>
 </main>
 
 <script>
-// 題庫資料（第七課已完整建置，第八～十二課預留擴充結構）
+// ==================== 後端 Supabase 連線設定 ====================
+const SUPABASE_CONFIG = {
+  URL: "https://ppdgubracsneozahujxl.supabase.co",
+  ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZGd1YnJhY3NuZW96YWh1anhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQzMDY2ODAsImV4cCI6MjEwOTg4MjY4MH0.sqLIf_xBLNyJ4zG0twoBfnMkYA8-UE0DvyG-3gXn-RE"
+};
+
+// ==================== 題庫資料（第七課最新 15 題 + 第八課 10 題） ====================
 const LESSONS = [
   {
     id: "L7",
+    examId: "L7-chinese",
     lessonNum: "第七課",
     title: "到此「藝」遊",
-    subtitle: "形近字、字義、成語隨堂練習（共 15 題）",
+    subtitle: "形近字、字義、成語測驗（共 15 題）",
     ready: true,
     questions: [
-      // 一、形近字與多音字辨別（1~5）
+      // 一、形近字與多音字測驗（1~5）
       {
-        section: "一、形近字與多音字辨別",
-        stem: "醫院門口貼著「禁」止吸菸的標示，但那個看起來弱不「禁」風的病人卻不聽勸阻。根據句意，這兩個「禁」字的注音依序為何？",
-        options: [
-          "ㄐㄧㄣ、ㄐㄧㄣˋ",
-          "ㄐㄧㄣˋ、ㄐㄧㄣ",
-          "ㄐㄧㄣˋ、ㄐㄧㄣˋ",
-          "ㄐㄧㄣ、ㄐㄧㄣ"
-        ],
-        answer: 1, // 0-indexed -> ②
-        explanation: "「禁」字為多音字，禁止的「禁」音為「ㄐㄧㄣˋ」；弱不禁風（承受、忍受）的「禁」音為「ㄐㄧㄣ」。"
+        section: "一、形近字與多音字測驗",
+        stem: "「弟弟非常（　）氣，竟然不小心把媽媽珍藏的（　）瓷茶杯打破了。」括號中依序應填入哪兩個字？",
+        options: ["淘、陶", "陶、淘", "淘、淘", "陶、陶"],
+        answer: 0, // ①
+        explanation: "頑皮、玩耍為「淘氣」（水部）；用黏土燒製的器物為「陶瓷」（阜部）。"
       },
       {
-        section: "一、形近字與多音字辨別",
-        stem: "弟弟個性很（　）氣，在客廳玩耍時，不小心撞倒了桌上的（　）偶，而姊姊當時正（　）醉在優美的音樂裡。請問括號中依序應填入哪三個字？",
+        section: "一、形近字與多音字測驗",
+        stem: "關於字形的辨識，下列哪一個句子中使用的字詞完全正確？",
         options: [
-          "陶、淘、陶",
-          "淘、陶、淘",
-          "淘、陶、陶",
-          "陶、淘、淘"
+          "閱讀書籍前，可以先翻閱（自）錄了解章節架構。",
+          "班長做事認真負責，總是（目）動自發協助同學。",
+          "他閱讀速度極快，能達到一（目）十行的驚人境界。",
+          "每個人都享有追求（目）由與平等權利的機會。"
         ],
         answer: 2, // ③
-        explanation: "頑皮、玩耍為「淘氣」（水部）；用黏土燒製的玩偶為「陶偶」、沉醉其中為「陶醉」（阜部）。"
-      },
-      {
-        section: "一、形近字與多音字辨別",
-        stem: "翻開這本書的（　）錄，小敏總是能一（　）十行，而且她從小就會（　）動自發的完成作業。請問括號中依序應填入哪三個字？",
-        options: [
-          "目、自、自",
-          "自、目、自",
-          "目、目、自",
-          "目、自、目"
-        ],
-        answer: 2, // ③
-        explanation: "書本前的檢索與眼睛閱讀為「目」（目錄、一目十行）；自己主動為「自」（自動自發）。"
-      },
-      {
-        section: "一、形近字與多音字辨別",
-        stem: "下列各組「　」中的字，哪一組的字音完全相同？",
-        options: [
-          "弱不「禁」風 ／ 「禁」止通行",
-          "「淘」金熱潮 ／ 樂「陶」陶",
-          "一「目」十行 ／ 「自」由自在",
-          "「斗」室雖小 ／ 「件」數眾多"
-        ],
-        answer: 1, // ②
-        explanation: "① ㄐㄧㄣ ／ ㄐㄧㄣˋ；② 皆為「ㄊㄠˊ」；③ ㄇㄨˋ ／ ㄗˋ；④ ㄉㄡˇ ／ ㄐㄧㄢˋ。"
-      },
-      {
-        section: "一、形近字與多音字辨別",
-        stem: "關於字詞的寫法，下列哪一個句子中沒有錯別字？",
-        options: [
-          "媽媽在廚房裡煮了一碗熱騰騰的牛肉面條。",
-          "姊姊非常喜歡欣賞表演出色的舞臺劇。",
-          "經過一個晴朗的假日，大家都玩得樂淘淘。",
-          "小明總是會自目自發的幫忙做家事。"
-        ],
-        answer: 1, // ②
-        explanation: "① 面條 →「麵」條；③ 樂淘淘 → 樂「陶陶」；④ 自目自發 → 自「動」自發。",
+        explanation: "① （自）錄 → 目錄；② （目）動自發 → 自動自發；④ （目）由 → 自由。只有 ③ 完全正確。",
         singleCol: true
+      },
+      {
+        section: "一、形近字與多音字測驗",
+        stem: "「清晨的大霧中，田野顯得一片迷（　），農夫急（　）著趕去採收，朝陽升起時稻穗閃耀著金黃光（　）。」括號中依序應填入哪三個字？",
+        options: [
+          "茫、忙、芒",
+          "芒、忙、茫",
+          "忙、茫、芒",
+          "茫、盲、芒"
+        ],
+        answer: 0, // ①
+        explanation: "一片迷「茫」；急「忙」趕去採收；金黃光「芒」。"
+      },
+      {
+        section: "一、形近字與多音字測驗",
+        stem: "「這棟老宅年久失修，弱不（　）風，管委會已公告（　）止進入並全面（　）菸，希望大家（　）得起好奇心的考驗。」括號中依序應填入「禁」的讀音為何？",
+        options: [
+          "ㄐㄧㄣ、ㄐㄧㄣˋ、ㄐㄧㄣˋ、ㄐㄧㄣ",
+          "ㄐㄧㄣˋ、ㄐㄧㄣ、ㄐㄧㄣˋ、ㄐㄧㄣ",
+          "ㄐㄧㄣ、ㄐㄧㄣ、ㄐㄧㄣˋ、ㄐㄧㄣˋ",
+          "ㄐㄧㄣˋ、ㄐㄧㄣˋ、ㄐㄧㄣ、ㄐㄧㄣ"
+        ],
+        answer: 0, // ①
+        explanation: "弱不禁（ㄐㄧㄣ，承受）風；禁（ㄐㄧㄣˋ，制止）止通行；全面禁（ㄐㄧㄣˋ）菸；禁（ㄐㄧㄣ，承受）得起考驗。"
+      },
+      {
+        section: "一、形近字與多音字測驗",
+        stem: "「叔叔一家人假日搭乘（　）輪前往小島，在那裡歡（　）了充實又難忘的週末。」括號中依序應填入哪兩個字？",
+        options: ["渡、度", "度、渡", "渡、渡", "度、度"],
+        answer: 0, // ①
+        explanation: "搭乘「渡」輪（坐船行經水面）；歡「度」週末（度過時光）。"
       },
 
       // 二、字義測驗（6~10）
       {
         section: "二、字義測驗",
-        stem: "「陶」字有多種解釋，請問「閱讀好書可以陶冶我們的性情」句中的「陶」是什麼意思？",
+        stem: "「他雖然借住在這間斗室之中，卻擁有兼濟天下的遠大抱負。」句中的「斗」字，意思是？",
         options: [
-          "用黏土燒製的器物",
-          "比喻培養、教育",
-          "快樂的樣子",
-          "姓氏"
+          "古代一種量糧食的器具",
+          "形狀像斗的器具",
+          "形容小",
+          "突然、驟變"
         ],
-        answer: 1, // ②
-        explanation: "陶冶的「陶」解釋為比喻培養、教育。"
+        answer: 2, // ③
+        explanation: "斗室的「斗」形容狹小。（米斗：古代量糧器具；漏斗：形狀像斗的器具；斗變：突然驟變）。"
       },
       {
         section: "二、字義測驗",
-        stem: "「這道湯完全沒放鹽巴，喝起來索然無味。」句中的「索」意思最接近下列哪一個解釋？",
+        stem: "「這部電影的情節平淡無奇，讓人看了感到索然無味。」句中的「索」字意思為何？",
         options: [
-          "粗繩，也泛指各種繩子或似繩子、鏈條的東西",
+          "粗繩、鏈條",
           "探求、搜尋",
-          "孤獨、疏離",
+          "討取、要求",
           "毫無"
         ],
         answer: 3, // ④
@@ -835,126 +945,106 @@ const LESSONS = [
       },
       {
         section: "二、字義測驗",
-        stem: "下列選項中，哪一個「目」字的意思是「列在書本或正文前，以供檢索內容的簡便條文」？",
+        stem: "下列選項中，哪一個「值」字的意思是「有價值、有意義的」？",
         options: [
-          "眉清「目」秀",
-          "頭「目」",
-          "「目」次",
-          "篇「目」"
-        ],
-        answer: 2, // ③
-        explanation: "目次的「目」解釋為列在書本或正文前，以供檢索內容的簡便條文。（① 眼睛；② 首領；④ 名稱、標題）。"
-      },
-      {
-        section: "二、字義測驗",
-        stem: "「奶奶總是一邊織毛衣，一邊念念有詞的叮嚀我們要注意安全。」句中的「念」是什麼意思？",
-        options: [
-          "惦記、懷想",
-          "反反覆覆述說著",
-          "記住",
-          "心思、想法"
-        ],
-        answer: 1, // ②
-        explanation: "念念有詞的「念」解釋為反反覆覆述說著。"
-      },
-      {
-        section: "二、字義測驗",
-        stem: "「斗」字有多種解釋，下列詞語與字義的搭配何者錯誤？",
-        options: [
-          "斗室：形容小",
-          "斗膽：形容大",
-          "斗變：突然、驟變",
-          "漏斗：古代一種量糧食的器具"
+          "「值」日生",
+          "數「值」",
+          "價「值」",
+          "不「值」一提"
         ],
         answer: 3, // ④
-        explanation: "古代量糧食的器具為「米斗」；「漏斗」的斗解釋為形狀像斗的器具。"
+        explanation: "不「值」一提的「值」表示值得、有價值；① 輪流擔任職務；② 計算所得結果；③ 價格。"
+      },
+      {
+        section: "二、字義測驗",
+        stem: "「經過這場劇烈的運動訓練後，大家都累得氣喘吁吁。」句中「劇」字的意思是？",
+        options: [
+          "由人扮演角色的表演活動",
+          "十分、非常猛烈",
+          "艱難、困苦",
+          "迅速、急促"
+        ],
+        answer: 1, // ②
+        explanation: "劇烈的「劇」解釋為十分、非常猛烈。"
+      },
+      {
+        section: "二、字義測驗",
+        stem: "關於「陶」字的字義，下列哪一個解釋是正確的？",
+        options: [
+          "「陶冶」是指用黏土燒製的器物。",
+          "「彩陶」是指快樂的樣子。",
+          "「陶冶」是指比喻培養、教育。",
+          "「樂陶陶」是指古代的姓氏。"
+        ],
+        answer: 2, // ③
+        explanation: "①「陶冶」比喻培養、教育；②「彩陶」是用黏土燒製器物；④「樂陶陶」是快樂的樣子。"
       },
 
-      // 三、成語與語詞應用（11~15）
+      // 三、成語測驗（11~15）
       {
-        section: "三、成語與語詞應用",
-        stem: "小敏看書的速度非常快，不但（　），而且過目不忘。空格中應填入哪一個成語？",
-        options: [
-          "一目十行",
-          "樂而忘返",
-          "不假思索",
-          "弱不禁風"
-        ],
+        section: "三、成語測驗",
+        stem: "形容「閱讀速度很快」的成語是下列哪一個？",
+        options: ["一目十行", "樂而忘返", "不假思索", "弱不禁風"],
         answer: 0, // ①
-        explanation: "「一目十行」形容閱讀速度很快。"
+        explanation: "「一目十行」形容閱讀速度極快。"
       },
       {
-        section: "三、成語與語詞應用",
-        stem: "我和表姐在星空下聊天說笑，玩得（　），直到深夜還捨不得去睡覺。空格中應填入哪一個成語？",
-        options: [
-          "一目十行",
-          "樂而忘返",
-          "不假思索",
-          "弱不禁風"
-        ],
+        section: "三、成語測驗",
+        stem: "這裡的山水風光秀麗宜人，令前來度假的旅客流連沉醉、＿＿＿＿。空格處應填入哪一個成語最恰當？",
+        options: ["一目十行", "樂而忘返", "不假思索", "弱不禁風"],
         answer: 1, // ②
         explanation: "「樂而忘返」形容歡樂無比而忘了返回。"
       },
       {
-        section: "三、成語與語詞應用",
-        stem: "形容一個人「不經思考立即做出反應，說話、反應十分敏捷」，可以使用哪一個成語？",
-        options: [
-          "一目十行",
-          "樂而忘返",
-          "不假思索",
-          "弱不禁風"
-        ],
+        section: "三、成語測驗",
+        stem: "面對評審臨時提出的機智考題，反應靈敏的隊長＿＿＿＿，立刻給出了精闢的回答。空格處應填入哪一個成語最恰當？",
+        options: ["一目十行", "樂而忘返", "不假思索", "弱不禁風"],
         answer: 2, // ③
-        explanation: "「不假思索」指不經思考立即做出反應，形容說話、反應敏捷。"
+        explanation: "「不假思索」指不經思考立即做出反應，形容反應敏捷。"
       },
       {
-        section: "三、成語與語詞應用",
-        stem: "別看禹恩長得瘦瘦小小，一副（　）的樣子，他可是全校跑得最快的飛毛腿。空格中應填入哪一個成語？",
-        options: [
-          "一目十行",
-          "樂而忘返",
-          "不假思索",
-          "弱不禁風"
-        ],
+        section: "三、成語測驗",
+        stem: "小華從小體質虛弱，吹到一點涼風就容易感冒生病。我們可以用哪一個成語來形容他的體質？",
+        options: ["一目十行", "樂而忘返", "不假思索", "弱不禁風"],
         answer: 3, // ④
         explanation: "「弱不禁風」形容人身體十分瘦弱。"
       },
       {
-        section: "三、成語與語詞應用",
-        stem: "綜合運用題。請問下列哪一個句子中的成語使用最不恰當（錯誤）？",
+        section: "三、成語測驗",
+        stem: "綜合應用題。下列句子中，哪一個成語使用最不恰當？",
         options: [
-          "這個問題非常簡單，大家【不假思索】，立刻按鈴搶答。",
-          "弟弟一看到這本厚重的字典就覺得頭昏腦脹，讀起來真是【一目十行】，半天也翻不了一頁。",
-          "遊樂園裡有許多好玩的設施，讓小朋友們玩得【樂而忘返】。",
-          "她生了一場大病之後，身體變得【弱不禁風】，需要好好休養。"
+          "哥哥閱讀能力極強，看書幾乎能【一目十行】。",
+          "這次校外教學非常好玩，大家都玩得【樂而忘返】。",
+          "他花了三天三夜深思熟慮，決定【不假思索】地擬定這份長遠計畫。",
+          "別看她身形嬌小且看似【弱不禁風】，其實是全國跆拳道冠軍。"
         ],
-        answer: 1, // ②
-        explanation: "「一目十行」形容閱讀速度非常快，與句中「覺得頭昏腦脹、半天也翻不了一頁」的語意矛盾，因此用法錯誤。",
+        answer: 2, // ③
+        explanation: "「深思熟慮」與「不假思索」語意矛盾，既然花了三天三夜深思熟慮就不是不假思索，因此用法最不恰當。",
         singleCol: true
       }
     ]
   },
   {
     id: "L8",
+    examId: "L8-chinese",
     lessonNum: "第八課",
     title: "四季的頭髮",
-    subtitle: "形近字、字義隨堂練習（共 10 題，成語待教完後補上）",
+    subtitle: "形近字、字義隨堂練習（共 10 題）",
     ready: true,
     questions: [
-      // 一、形近字與多音字辨別（1~5）
       {
         section: "一、形近字與多音字辨別",
         stem: "妹妹把長長的頭髮編成兩條（　）子，走起路來一甩一甩的。請問括號中應填入哪一個字？",
         options: ["辮", "辯", "辨", "辦"],
         answer: 0,
-        explanation: "「辮」是分股交錯編成的條狀物，例如髮辮、辮子。（辯：辯論；辨：分辨；辦：辦理）"
+        explanation: "分股交錯編成的條狀物為「辮」子。"
       },
       {
         section: "一、形近字與多音字辨別",
         stem: "小美（　）起腳尖想看清楚窗外，一看到爸爸回來，她熱淚盈（　）。請問括號中依序應填入哪兩個字？",
         options: ["踮、眶", "墊、框", "踮、框", "點、眶"],
         answer: 0,
-        explanation: "抬起腳跟、靠腳尖著地是「踮」起腳尖；眼睛的四周是「眶」，熱淚盈眶。"
+        explanation: "抬起腳跟靠腳尖著地為「踮」腳；眼睛四周為「眶」。"
       },
       {
         section: "一、形近字與多音字辨別",
@@ -973,7 +1063,7 @@ const LESSONS = [
         stem: "老師說：「做功課不可以（　）機偷懶，（　）下的作業要趕快寫完。」請問括號中依序應填入哪兩個字？",
         options: ["乘、剩", "剩、乘", "乘、乘", "剩、剩"],
         answer: 0,
-        explanation: "趁、利用是「乘」機；還留下來的是「剩」下。"
+        explanation: "趁、利用為「乘」機；留存下來為「剩」下。"
       },
       {
         section: "一、形近字與多音字辨別",
@@ -988,8 +1078,6 @@ const LESSONS = [
         explanation: "① 古扳 → 古「板」；③ 一針風 → 一「陣」風；④ 驚下 → 驚「嚇」。",
         singleCol: true
       },
-
-      // 二、字義測驗（6~10）
       {
         section: "二、字義測驗",
         stem: "「面對大野狼，小紅帽絲毫不感到害怕。」句中的「絲」是什麼意思？",
@@ -1000,7 +1088,7 @@ const LESSONS = [
           "極細微的"
         ],
         answer: 3,
-        explanation: "絲毫的「絲」解釋為極細微的，絲毫不感到害怕就是一點點都不怕。"
+        explanation: "絲毫的「絲」解釋為極細微的。"
       },
       {
         section: "二、字義測驗",
@@ -1012,7 +1100,7 @@ const LESSONS = [
           "分散、散開"
         ],
         answer: 2,
-        explanation: "「一陣子」的「陣」解釋為表示一小段的時間。（① 一陣風；② 布陣）"
+        explanation: "「一陣子」的「陣」解釋為表示一小段的時間。"
       },
       {
         section: "二、字義測驗",
@@ -1024,7 +1112,7 @@ const LESSONS = [
           "音樂的節拍"
         ],
         answer: 2,
-        explanation: "古板的「板」解釋為不靈活或固執不知變通的。（① 墊板；② 木板；④ 慢板）"
+        explanation: "古板的「板」解釋為不靈活或固執不知變通的。"
       },
       {
         section: "二、字義測驗",
@@ -1036,7 +1124,7 @@ const LESSONS = [
           "很、甚"
         ],
         answer: 2,
-        explanation: "挺身而出的「挺」解釋為出面，形容勇往直前不害怕的樣子。（① 挺胸；② 筆挺；④ 挺好）"
+        explanation: "挺身而出的「挺」解釋為出面，形容勇往直前不害怕的樣子。"
       },
       {
         section: "二、字義測驗",
@@ -1048,52 +1136,22 @@ const LESSONS = [
           "故里：地方政府行政區域之一，設於「鄰」之上"
         ],
         answer: 3,
-        explanation: "「故里」的「里」解釋為家鄉；地方政府行政區域之一、設於「鄰」之上的是「里民」的「里」。"
+        explanation: "「故里」的「里」是家鄉之意；行政區域設於鄰之上的是「里民」的「里」。"
       }
     ]
   },
-  {
-    id: "L9",
-    lessonNum: "第九課",
-    title: "第九課隨堂練習",
-    subtitle: "形近字、字義、成語隨堂練習（建置中）",
-    ready: false,
-    questions: []
-  },
-  {
-    id: "L10",
-    lessonNum: "第十課",
-    title: "第十課隨堂練習",
-    subtitle: "形近字、字義、成語隨堂練習（建置中）",
-    ready: false,
-    questions: []
-  },
-  {
-    id: "L11",
-    lessonNum: "第十一課",
-    title: "第十一課隨堂練習",
-    subtitle: "形近字、字義、成語隨堂練習（建置中）",
-    ready: false,
-    questions: []
-  },
-  {
-    id: "L12",
-    lessonNum: "第十二課",
-    title: "第十二課隨堂練習",
-    subtitle: "形近字、字義、成語隨堂練習（建置中）",
-    ready: false,
-    questions: []
-  }
+  { id: "L9", lessonNum: "第九課", title: "第九課隨堂練習", subtitle: "建置中", ready: false, questions: [] },
+  { id: "L10", lessonNum: "第十課", title: "第十課隨堂練習", subtitle: "建置中", ready: false, questions: [] },
+  { id: "L11", lessonNum: "第十一課", title: "第十一課隨堂練習", subtitle: "建置中", ready: false, questions: [] },
+  { id: "L12", lessonNum: "第十二課", title: "第十二課隨堂練習", subtitle: "建置中", ready: false, questions: [] }
 ];
 
 const CIRCLED_NUMS = ["①", "②", "③", "④"];
 let currentLesson = null;
-let currentQIndex = 0;
-let userState = {}; // { qIndex: { selected: number | null, revealed: boolean } }
-let isListMode = false;
+let currentMode = "home"; // 'home' | 'projector' | 'exam'
 let fontScale = 1;
 
-// 將注音字串自動轉換為台灣國小標準「直書＋聲調居右（輕聲居頂）」HTML
+// 注音直書排版
 function renderZhuyinCluster(cluster) {
   let tone = "";
   let phonemes = cluster;
@@ -1105,7 +1163,6 @@ function renderZhuyinCluster(cluster) {
   const charsHtml = Array.from(phonemes).map(ch => `<span>${ch}</span>`).join("");
   const lightToneHtml = (tone === "˙") ? `<span class="zhuyin-tone-light">˙</span>` : "";
   const sideToneHtml = (tone && tone !== "˙") ? `<span class="zhuyin-tone-side">${tone}</span>` : "";
-
   return `<span class="zhuyin-box"><span class="zhuyin-phonemes">${lightToneHtml}${charsHtml}</span>${sideToneHtml}</span>`;
 }
 
@@ -1116,86 +1173,102 @@ function formatStemHTML(text) {
     .replace(/([ㄅ-ㄩ]+[ˊˇˋ˙]?)/g, (match) => renderZhuyinCluster(match));
 }
 
-function renderHome() {
-  const grid = document.getElementById("lesson-grid");
-  grid.innerHTML = LESSONS.map(lesson => `
-    <div class="lesson-card ${lesson.ready ? 'ready' : 'locked'}"
-         onclick="${lesson.ready ? `openLesson('${lesson.id}')` : ''}">
-      <div>
-        <div class="card-top">
-          <span class="lesson-tag">${lesson.lessonNum}</span>
-          <span class="status-pill ${lesson.ready ? 'ready' : 'soon'}">
-            ${lesson.ready ? `✅ 已上線・共 ${lesson.questions.length} 題` : '⏳ 待建立'}
-          </span>
-        </div>
-        <div class="lesson-name" style="margin-top:16px;">${lesson.title}</div>
-        <div class="lesson-desc" style="margin-top:6px;">${lesson.subtitle}</div>
-      </div>
-      <button class="start-btn" ${lesson.ready ? '' : 'disabled'}>
-        ${lesson.ready ? '▶ 進入課堂隨堂測驗' : '敬請期待'}
-      </button>
-    </div>
-  `).join("");
-}
-
-function openLesson(lessonId) {
-  const lesson = LESSONS.find(l => l.id === lessonId);
-  if (!lesson || !lesson.ready) return;
-  currentLesson = lesson;
-  currentQIndex = 0;
-  userState = {};
-  isListMode = false;
-
-  document.getElementById("home-view").style.display = "none";
-  document.getElementById("quiz-view").style.display = "block";
-  document.getElementById("btn-home").style.display = "inline-flex";
-  document.getElementById("btn-mode-toggle").style.display = "inline-flex";
-  document.getElementById("btn-mode-toggle").textContent = "📋 切換全卷檢視";
-  document.getElementById("single-stage-container").style.display = "block";
-  document.getElementById("list-mode-container").style.display = "none";
-
-  document.getElementById("quiz-lesson-title").textContent = `${lesson.lessonNum}《${lesson.title}》隨堂練習`;
-  renderQuestionStage();
+// 換頁控制器
+function showView(viewId) {
+  document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+  document.getElementById(viewId).classList.add("active");
+  document.getElementById("btn-home").style.display = (viewId === "view-home") ? "none" : "inline-flex";
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function goHome() {
   currentLesson = null;
-  document.getElementById("home-view").style.display = "block";
-  document.getElementById("quiz-view").style.display = "none";
-  document.getElementById("btn-home").style.display = "none";
-  document.getElementById("btn-mode-toggle").style.display = "none";
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  currentMode = "home";
+  showView("view-home");
 }
 
-function renderDots() {
-  const dotsEl = document.getElementById("q-dots");
-  dotsEl.innerHTML = currentLesson.questions.map((q, idx) => {
-    const st = userState[idx];
+// ==================== 首頁渲染 ====================
+function renderHome() {
+  const grid = document.getElementById("lesson-grid");
+  grid.innerHTML = LESSONS.map(lesson => `
+    <div class="lesson-card ${lesson.ready ? 'ready' : 'locked'}">
+      <div>
+        <div class="card-top">
+          <span class="lesson-tag">${lesson.lessonNum}</span>
+          <span class="status-pill ${lesson.ready ? 'ready' : 'soon'}">
+            ${lesson.ready ? `✅ 已上線 (${lesson.questions.length} 題)` : '⏳ 待建立'}
+          </span>
+        </div>
+        <div class="lesson-name" style="margin-top:14px;">${lesson.title}</div>
+        <div class="lesson-desc" style="margin-top:6px;">${lesson.subtitle}</div>
+      </div>
+      <div class="card-actions">
+        <button class="action-btn proj" ${lesson.ready ? '' : 'disabled'} onclick="openProjectorMode('${lesson.id}')">
+          🖥 課堂投影複習
+        </button>
+        <button class="action-btn exam" ${lesson.ready ? '' : 'disabled'} onclick="openExamLogin('${lesson.id}')">
+          ✍️ 學生線上測驗
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+// 初始化 1~29 座號選單
+function initSeatSelect() {
+  const select = document.getElementById("student-seat");
+  select.innerHTML = '<option value="" disabled selected>-- 請選擇您的座號 --</option>';
+  for (let i = 1; i <= 29; i++) {
+    const num = i < 10 ? `0${i}` : `${i}`;
+    select.innerHTML += `<option value="${i}">${num} 號</option>`;
+  }
+}
+
+// ==================== 模式一：課堂投影複習 ====================
+let projQIndex = 0;
+let projState = {};
+let isProjListMode = false;
+
+function openProjectorMode(lessonId) {
+  currentLesson = LESSONS.find(l => l.id === lessonId);
+  if (!currentLesson || !currentLesson.ready) return;
+  currentMode = "projector";
+  projQIndex = 0;
+  projState = {};
+  isProjListMode = false;
+
+  document.getElementById("proj-lesson-title").textContent = `${currentLesson.lessonNum}《${currentLesson.title}》課堂投影練習`;
+  document.getElementById("proj-single-container").style.display = "block";
+  document.getElementById("proj-list-container").style.display = "none";
+  document.getElementById("btn-proj-list-toggle").textContent = "📋 切換全卷檢視";
+
+  renderProjStage();
+  showView("view-projector");
+}
+
+function renderProjStage() {
+  const q = currentLesson.questions[projQIndex];
+  const st = projState[projQIndex] || { selected: null, revealed: false };
+
+  document.getElementById("proj-section-badge").textContent = q.section;
+
+  // 渲染題號導覽
+  const dotsEl = document.getElementById("proj-q-dots");
+  dotsEl.innerHTML = currentLesson.questions.map((item, idx) => {
     let cls = "q-dot";
-    if (!isListMode && idx === currentQIndex) cls += " current";
-    if (st && st.selected !== null) {
-      cls += (st.selected === q.answer) ? " answered-correct" : " answered-wrong";
-    } else if (st && st.revealed) {
-      cls += " answered-correct";
+    if (idx === projQIndex) cls += " current";
+    const s = projState[idx];
+    if (s && s.selected !== null) {
+      cls += (s.selected === item.answer) ? " answered correct" : " answered wrong";
     }
-    return `<button class="${cls}" onclick="jumpToQuestion(${idx})">${idx + 1}</button>`;
+    return `<button class="${cls}" onclick="jumpProjQuestion(${idx})">${idx + 1}</button>`;
   }).join("");
-}
 
-function renderQuestionStage() {
-  if (!currentLesson) return;
-  const q = currentLesson.questions[currentQIndex];
-  const st = userState[currentQIndex] || { selected: null, revealed: false };
+  document.getElementById("proj-stem").innerHTML =
+    `<span class="question-num-pill">第 ${projQIndex + 1} 題</span>${formatStemHTML(q.stem)}`;
 
-  document.getElementById("quiz-category-badge").textContent = q.section;
-  renderDots();
-
-  const stemEl = document.getElementById("stage-stem");
-  stemEl.innerHTML = `<span class="question-num-pill">第 ${currentQIndex + 1} 題</span>${formatStemHTML(q.stem)}`;
-
-  const optsEl = document.getElementById("stage-options");
+  const optsEl = document.getElementById("proj-options");
   optsEl.className = "options-grid" + (q.singleCol || q.options.some(o => o.length > 16) ? " single-col" : "");
-
   optsEl.innerHTML = q.options.map((optText, optIdx) => {
     let btnClass = "option-btn";
     if (st.revealed) {
@@ -1203,155 +1276,333 @@ function renderQuestionStage() {
       else if (st.selected === optIdx) btnClass += " wrong";
     }
     return `
-      <button class="${btnClass}" onclick="selectOption(${currentQIndex}, ${optIdx})">
+      <button class="${btnClass}" onclick="selectProjOption(${optIdx})">
         <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
         <span>${formatStemHTML(optText)}</span>
       </button>
     `;
   }).join("");
 
-  const expBox = document.getElementById("stage-exp");
-  const expHeader = document.getElementById("stage-exp-header");
-  const expBody = document.getElementById("stage-exp-body");
-
+  const expBox = document.getElementById("proj-exp");
   if (st.revealed) {
     expBox.classList.add("show");
-    if (st.selected === null) {
-      expHeader.textContent = `💡 正確答案：${CIRCLED_NUMS[q.answer]}`;
-    } else if (st.selected === q.answer) {
-      expHeader.textContent = `🎉 答對了！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
-    } else {
-      expHeader.textContent = `❌ 答錯囉！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
-    }
-    expBody.innerHTML = formatStemHTML(q.explanation);
+    document.getElementById("proj-exp-header").textContent =
+      (st.selected === q.answer) ? `🎉 答對了！正確答案是 ${CIRCLED_NUMS[q.answer]}` :
+      (st.selected === null) ? `💡 正確答案：${CIRCLED_NUMS[q.answer]}` :
+      `❌ 答錯囉！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
+    document.getElementById("proj-exp-body").innerHTML = formatStemHTML(q.explanation);
   } else {
     expBox.classList.remove("show");
   }
 
-  document.getElementById("btn-prev").disabled = (currentQIndex === 0);
-  document.getElementById("btn-next").disabled = (currentQIndex === currentLesson.questions.length - 1);
+  document.getElementById("btn-proj-prev").disabled = (projQIndex === 0);
+  document.getElementById("btn-proj-next").disabled = (projQIndex === currentLesson.questions.length - 1);
 }
 
-function selectOption(qIdx, optIdx) {
-  userState[qIdx] = { selected: optIdx, revealed: true };
-  if (isListMode) {
-    renderListMode();
-    renderDots();
-  } else {
-    renderQuestionStage();
-  }
+function selectProjOption(optIdx) {
+  projState[projQIndex] = { selected: optIdx, revealed: true };
+  renderProjStage();
 }
 
-function revealCurrentAnswer() {
-  const prev = userState[currentQIndex] || { selected: null, revealed: false };
-  userState[currentQIndex] = { selected: prev.selected, revealed: !prev.revealed };
-  renderQuestionStage();
+function revealProjAnswer() {
+  const cur = projState[projQIndex] || { selected: null, revealed: false };
+  projState[projQIndex] = { selected: cur.selected, revealed: !cur.revealed };
+  renderProjStage();
 }
 
-function resetCurrentQuestion() {
-  delete userState[currentQIndex];
-  renderQuestionStage();
+function resetProjQuestion() {
+  delete projState[projQIndex];
+  renderProjStage();
 }
 
-function resetAllQuestions() {
-  userState = {};
-  if (isListMode) {
-    renderListMode();
-    renderDots();
-  } else {
-    renderQuestionStage();
-  }
+function prevProjQuestion() {
+  if (projQIndex > 0) { projQIndex--; renderProjStage(); }
+}
+function nextProjQuestion() {
+  if (projQIndex < currentLesson.questions.length - 1) { projQIndex++; renderProjStage(); }
+}
+function jumpProjQuestion(idx) {
+  projQIndex = idx;
+  renderProjStage();
 }
 
-function jumpToQuestion(idx) {
-  currentQIndex = idx;
-  if (isListMode) {
-    const target = document.getElementById(`list-q-${idx}`);
-    if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
-  } else {
-    renderQuestionStage();
-  }
-}
+function toggleProjListMode() {
+  isProjListMode = !isProjListMode;
+  const single = document.getElementById("proj-single-container");
+  const list = document.getElementById("proj-list-container");
+  const btn = document.getElementById("btn-proj-list-toggle");
 
-function prevQuestion() {
-  if (currentQIndex > 0) {
-    currentQIndex--;
-    renderQuestionStage();
-  }
-}
-
-function nextQuestion() {
-  if (currentLesson && currentQIndex < currentLesson.questions.length - 1) {
-    currentQIndex++;
-    renderQuestionStage();
-  }
-}
-
-function toggleDisplayMode() {
-  isListMode = !isListMode;
-  const btn = document.getElementById("btn-mode-toggle");
-  const singleEl = document.getElementById("single-stage-container");
-  const listEl = document.getElementById("list-mode-container");
-
-  if (isListMode) {
+  if (isProjListMode) {
     btn.textContent = "🖥 切換單題投影";
-    singleEl.style.display = "none";
-    listEl.style.display = "flex";
-    renderListMode();
-    renderDots();
+    single.style.display = "none";
+    list.style.display = "flex";
+    renderProjList();
   } else {
     btn.textContent = "📋 切換全卷檢視";
-    singleEl.style.display = "block";
-    listEl.style.display = "none";
-    renderQuestionStage();
+    single.style.display = "block";
+    list.style.display = "none";
+    renderProjStage();
   }
 }
 
-function renderListMode() {
-  if (!currentLesson) return;
-  const container = document.getElementById("list-mode-container");
-  let lastSection = "";
+function renderProjList() {
+  const container = document.getElementById("proj-list-container");
   let html = "";
-
   currentLesson.questions.forEach((q, idx) => {
-    if (q.section !== lastSection) {
-      lastSection = q.section;
-      html += `<div class="section-banner">${q.section}</div>`;
-    }
-    const st = userState[idx] || { selected: null, revealed: false };
+    const st = projState[idx] || { selected: null, revealed: false };
     const singleCol = q.singleCol || q.options.some(o => o.length > 16);
-
     const optsHtml = q.options.map((optText, optIdx) => {
-      let btnClass = "option-btn";
+      let cls = "option-btn";
       if (st.revealed) {
-        if (optIdx === q.answer) btnClass += " correct";
-        else if (st.selected === optIdx) btnClass += " wrong";
+        if (optIdx === q.answer) cls += " correct";
+        else if (st.selected === optIdx) cls += " wrong";
       }
       return `
-        <button class="${btnClass}" onclick="selectOption(${idx}, ${optIdx})">
+        <button class="${cls}" onclick="projState[${idx}]={selected:${optIdx},revealed:true};renderProjList();">
           <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
           <span>${formatStemHTML(optText)}</span>
         </button>
       `;
     }).join("");
 
-    let expHeaderText = `💡 正確答案：${CIRCLED_NUMS[q.answer]}`;
-    if (st.selected !== null) {
-      expHeaderText = (st.selected === q.answer)
-        ? `🎉 答對了！正確答案是 ${CIRCLED_NUMS[q.answer]}`
-        : `❌ 答錯囉！正確答案是 ${CIRCLED_NUMS[q.answer]}`;
-    }
-
     html += `
-      <div class="stage-card" id="list-q-${idx}" style="margin-bottom:0;">
+      <div class="stage-card">
         <div class="question-stem">
           <span class="question-num-pill">第 ${idx + 1} 題</span>${formatStemHTML(q.stem)}
         </div>
-        <div class="options-grid ${singleCol ? 'single-col' : ''}">
-          ${optsHtml}
-        </div>
+        <div class="options-grid ${singleCol ? 'single-col' : ''}">${optsHtml}</div>
         <div class="explanation-box ${st.revealed ? 'show' : ''}">
-          <div class="exp-header">${expHeaderText}</div>
+          <div class="exp-header">💡 正確答案：${CIRCLED_NUMS[q.answer]}</div>
+          <div class="exp-body">${formatStemHTML(q.explanation)}</div>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+// ==================== 模式二：學生線上測驗 ====================
+let currentStudent = { class: "4-2", seat: 1, name: "" };
+let examQIndex = 0;
+let examAnswers = {}; // { qIndex: optIdx (0~3) }
+
+function openExamLogin(lessonId) {
+  currentLesson = LESSONS.find(l => l.id === lessonId);
+  if (!currentLesson || !currentLesson.ready) return;
+  document.getElementById("login-lesson-title").textContent = `${currentLesson.lessonNum}《${currentLesson.title}》線上測驗`;
+  document.getElementById("student-seat").value = "";
+  document.getElementById("student-name").value = "";
+  showView("view-exam-login");
+}
+
+function startStudentExam(e) {
+  e.preventDefault();
+  const seatVal = document.getElementById("student-seat").value;
+  if (!seatVal) {
+    alert("請先選擇您的座號！");
+    return;
+  }
+  currentStudent = {
+    class: document.getElementById("student-class").value,
+    seat: parseInt(seatVal, 10),
+    name: document.getElementById("student-name").value.trim()
+  };
+
+  examQIndex = 0;
+  examAnswers = {};
+  currentMode = "exam";
+
+  const num = currentStudent.seat < 10 ? `0${currentStudent.seat}` : `${currentStudent.seat}`;
+  document.getElementById("exam-badge-info").textContent =
+    `${currentStudent.class} 班 ${num} 號 ${currentStudent.name ? ' ' + currentStudent.name : ''}`;
+  document.getElementById("exam-test-lesson-title").textContent =
+    `${currentLesson.lessonNum}《${currentLesson.title}》測驗`;
+
+  renderExamStage();
+  showView("view-exam-test");
+}
+
+function renderExamStage() {
+  const q = currentLesson.questions[examQIndex];
+  const selectedOpt = examAnswers[examQIndex];
+
+  // 更新進度
+  const answeredCount = Object.keys(examAnswers).length;
+  document.getElementById("exam-progress-text").textContent =
+    `已作答 ${answeredCount} / ${currentLesson.questions.length} 題`;
+
+  // 渲染題號導覽
+  const dotsEl = document.getElementById("exam-q-dots");
+  dotsEl.innerHTML = currentLesson.questions.map((item, idx) => {
+    let cls = "q-dot";
+    if (idx === examQIndex) cls += " current";
+    if (examAnswers[idx] !== undefined) cls += " answered";
+    return `<button class="${cls}" onclick="jumpExamQuestion(${idx})">${idx + 1}</button>`;
+  }).join("");
+
+  document.getElementById("exam-stem").innerHTML =
+    `<span class="question-num-pill">第 ${examQIndex + 1} 題</span>${formatStemHTML(q.stem)}`;
+
+  const optsEl = document.getElementById("exam-options");
+  optsEl.className = "options-grid" + (q.singleCol || q.options.some(o => o.length > 16) ? " single-col" : "");
+  optsEl.innerHTML = q.options.map((optText, optIdx) => {
+    const isSel = (selectedOpt === optIdx);
+    return `
+      <button class="option-btn ${isSel ? 'selected-student' : ''}" onclick="selectExamOption(${optIdx})">
+        <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+        <span>${formatStemHTML(optText)}</span>
+      </button>
+    `;
+  }).join("");
+
+  document.getElementById("btn-exam-prev").disabled = (examQIndex === 0);
+  document.getElementById("btn-exam-next").disabled = (examQIndex === currentLesson.questions.length - 1);
+}
+
+function selectExamOption(optIdx) {
+  examAnswers[examQIndex] = optIdx;
+  renderExamStage();
+}
+
+function prevExamQuestion() {
+  if (examQIndex > 0) { examQIndex--; renderExamStage(); }
+}
+function nextExamQuestion() {
+  if (examQIndex < currentLesson.questions.length - 1) { examQIndex++; renderExamStage(); }
+}
+function jumpExamQuestion(idx) {
+  examQIndex = idx;
+  renderExamStage();
+}
+
+// 送出並檢查
+async function confirmSubmitExam() {
+  const total = currentLesson.questions.length;
+  const missing = [];
+  for (let i = 0; i < total; i++) {
+    if (examAnswers[i] === undefined) missing.push(i + 1);
+  }
+
+  if (missing.length > 0) {
+    const ok = confirm(`注意：您尚有第 ${missing.join("、")} 題尚未作答！\n\n確定現在就要交卷嗎？`);
+    if (!ok) return;
+  } else {
+    if (!confirm("確定要送出試卷嗎？送出後即完成測驗。")) return;
+  }
+
+  const submitBtn = document.getElementById("btn-submit-exam");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "⏳ 傳送成績中...";
+
+  // 計算成績
+  let correctCount = 0;
+  const answersArr = [];
+  for (let i = 0; i < total; i++) {
+    const chosen = examAnswers[i];
+    if (chosen !== undefined) {
+      answersArr.push(chosen + 1); // 轉為 1~4
+      if (chosen === currentLesson.questions[i].answer) correctCount++;
+    } else {
+      answersArr.push(0); // 0 代表未作答
+    }
+  }
+
+  const scaledScore = Math.round((correctCount / total) * 100);
+  const clientId = (crypto.randomUUID ? crypto.randomUUID() : `cid-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+  const payload = {
+    exam_id: currentLesson.examId || `${currentLesson.id}-chinese`,
+    grade: 4,
+    subject: "chinese",
+    year: 114,
+    class: currentStudent.class,
+    seat: currentStudent.seat,
+    name: currentStudent.name || null,
+    answers: answersArr,
+    score: correctCount,
+    total: total,
+    is_deleted: false,
+    client_id: clientId
+  };
+
+  // 傳送到 Supabase
+  try {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/submissions`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok && res.status !== 409) {
+      console.warn("後端儲存狀態碼:", res.status);
+    }
+  } catch (err) {
+    console.error("傳送至 Supabase 錯誤:", err);
+  }
+
+  // 本機 localStorage 備份一份
+  const localBackup = JSON.parse(localStorage.getItem("chinese_quiz_submissions") || "[]");
+  localBackup.push({ ...payload, created_at: new Date().toISOString() });
+  localStorage.setItem("chinese_quiz_submissions", JSON.stringify(localBackup));
+
+  // 顯示結果
+  submitBtn.disabled = false;
+  submitBtn.textContent = "📝 檢查並交卷";
+
+  document.getElementById("res-student-header").textContent =
+    `🎉 ${currentStudent.class} 班 ${currentStudent.seat} 號 ${currentStudent.name ? currentStudent.name : ''} 測驗已送出！`;
+  document.getElementById("res-score-num").textContent = `${scaledScore} 分`;
+  document.getElementById("res-desc").textContent =
+    `共 ${total} 題，答對 ${correctCount} 題，答錯 ${total - correctCount} 題`;
+
+  renderCorrectionSheet();
+  showView("view-exam-result");
+}
+
+// 產生學生個人訂正詳解清單
+function renderCorrectionSheet() {
+  const container = document.getElementById("correction-sheet");
+  let html = `<h2 style="font-size:2rem;font-weight:900;color:#1e3a8a;margin-bottom:12px;">📑 試卷題目訂正與詳解</h2>`;
+
+  currentLesson.questions.forEach((q, idx) => {
+    const studentChoice = examAnswers[idx]; // 0~3 or undefined
+    const isCorrect = (studentChoice === q.answer);
+    const singleCol = q.singleCol || q.options.some(o => o.length > 16);
+
+    const optsHtml = q.options.map((optText, optIdx) => {
+      let cls = "option-btn";
+      if (optIdx === q.answer) cls += " correct";
+      else if (studentChoice === optIdx) cls += " wrong";
+      return `
+        <div class="${cls}">
+          <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+          <span>${formatStemHTML(optText)}</span>
+        </div>
+      `;
+    }).join("");
+
+    const statusTag = (studentChoice === undefined)
+      ? `<span style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">未作答</span>`
+      : isCorrect
+      ? `<span style="background:#dcfce7;color:#16a34a;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">✅ 答對</span>`
+      : `<span style="background:#fee2e2;color:#dc2626;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">❌ 答錯（您的答案：${CIRCLED_NUMS[studentChoice]}）</span>`;
+
+    html += `
+      <div class="stage-card">
+        <div class="question-stem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+            <span class="question-num-pill">第 ${idx + 1} 題</span>
+            ${statusTag}
+          </div>
+          ${formatStemHTML(q.stem)}
+        </div>
+        <div class="options-grid ${singleCol ? 'single-col' : ''}">${optsHtml}</div>
+        <div class="explanation-box show" style="margin-top:20px;">
+          <div class="exp-header">💡 正確解答：${CIRCLED_NUMS[q.answer]}</div>
           <div class="exp-body">${formatStemHTML(q.explanation)}</div>
         </div>
       </div>
@@ -1361,6 +1612,15 @@ function renderListMode() {
   container.innerHTML = html;
 }
 
+function showCorrectionSheet() {
+  const sheet = document.getElementById("correction-sheet");
+  sheet.style.display = (sheet.style.display === "none") ? "flex" : "none";
+  if (sheet.style.display === "flex") {
+    sheet.scrollIntoView({ behavior: "smooth" });
+  }
+}
+
+// ==================== 字級與全螢幕輔助 ====================
 function adjustFontSize(delta) {
   if (delta === 0) {
     fontScale = 1;
@@ -1378,25 +1638,31 @@ function toggleFullscreen() {
   }
 }
 
-// 鍵盤快捷鍵支援（方便老師在講台用簡報筆或鍵盤操作）
+// 課堂鍵盤快捷鍵
 window.addEventListener("keydown", (e) => {
-  if (!currentLesson || isListMode) return;
-  if (e.key === "ArrowRight" || e.key === "PageDown") {
-    e.preventDefault();
-    nextQuestion();
-  } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
-    e.preventDefault();
-    prevQuestion();
-  } else if (["1", "2", "3", "4"].includes(e.key)) {
-    e.preventDefault();
-    selectOption(currentQIndex, parseInt(e.key, 10) - 1);
-  } else if (e.key === " ") {
-    e.preventDefault();
-    revealCurrentAnswer();
+  if (currentMode === "projector" && !isProjListMode) {
+    if (e.key === "ArrowRight" || e.key === "PageDown") {
+      e.preventDefault(); nextProjQuestion();
+    } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+      e.preventDefault(); prevProjQuestion();
+    } else if (["1", "2", "3", "4"].includes(e.key)) {
+      e.preventDefault(); selectProjOption(parseInt(e.key, 10) - 1);
+    } else if (e.key === " ") {
+      e.preventDefault(); revealProjAnswer();
+    }
+  } else if (currentMode === "exam") {
+    if (["1", "2", "3", "4"].includes(e.key)) {
+      selectExamOption(parseInt(e.key, 10) - 1);
+    } else if (e.key === "ArrowRight") {
+      nextExamQuestion();
+    } else if (e.key === "ArrowLeft") {
+      prevExamQuestion();
+    }
   }
 });
 
-// 初始化首頁
+// 初始化
+initSeatSelect();
 renderHome();
 </script>
 </body>
