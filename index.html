@@ -770,10 +770,6 @@
             <option value="" disabled selected>-- 請選擇您的座號 --</option>
           </select>
         </div>
-        <div class="form-group">
-          <label for="student-name">姓名（選填）</label>
-          <input type="text" id="student-name" class="form-control" placeholder="請輸入姓名（可不填）">
-        </div>
         <button type="submit" class="btn-submit-login">🚀 開始線上測驗</button>
         <button type="button" class="ctrl-btn" style="width:100%;margin-top:14px;justify-content:center;" onclick="goHome()">取消，返回首頁</button>
       </form>
@@ -1409,7 +1405,7 @@ function renderProjList() {
 }
 
 // ==================== 模式二：學生線上測驗 ====================
-let currentStudent = { class: "4-2", seat: 1, name: "" };
+let currentStudent = { class: "4-2", seat: 1 };
 let examQIndex = 0;
 let examAnswers = {}; // { qIndex: optIdx (0~3) }
 
@@ -1418,7 +1414,6 @@ function openExamLogin(lessonId) {
   if (!currentLesson || !currentLesson.ready) return;
   document.getElementById("login-lesson-title").textContent = `${currentLesson.lessonNum}《${currentLesson.title}》線上測驗`;
   document.getElementById("student-seat").value = "";
-  document.getElementById("student-name").value = "";
   showView("view-exam-login");
 }
 
@@ -1431,8 +1426,7 @@ function startStudentExam(e) {
   }
   currentStudent = {
     class: document.getElementById("student-class").value,
-    seat: parseInt(seatVal, 10),
-    name: document.getElementById("student-name").value.trim()
+    seat: parseInt(seatVal, 10)
   };
 
   examQIndex = 0;
@@ -1440,8 +1434,7 @@ function startStudentExam(e) {
   currentMode = "exam";
 
   const num = currentStudent.seat < 10 ? `0${currentStudent.seat}` : `${currentStudent.seat}`;
-  document.getElementById("exam-badge-info").textContent =
-    `${currentStudent.class} 班 ${num} 號 ${currentStudent.name ? ' ' + currentStudent.name : ''}`;
+  document.getElementById("exam-badge-info").textContent = `${currentStudent.class} 班 ${num} 號`;
   document.getElementById("exam-test-lesson-title").textContent =
     `${currentLesson.lessonNum}《${currentLesson.title}》測驗`;
 
@@ -1544,7 +1537,7 @@ async function confirmSubmitExam() {
     year: 114,
     class: currentStudent.class,
     seat: currentStudent.seat,
-    name: currentStudent.name || null,
+    name: null,
     answers: answersArr,
     score: correctCount,
     total: total,
@@ -1581,7 +1574,7 @@ async function confirmSubmitExam() {
   submitBtn.textContent = "📝 檢查並交卷";
 
   document.getElementById("res-student-header").textContent =
-    `🎉 ${currentStudent.class} 班 ${currentStudent.seat} 號 ${currentStudent.name ? currentStudent.name : ''} 測驗已送出！`;
+    `🎉 ${currentStudent.class} 班 ${currentStudent.seat} 號 測驗已送出！`;
   document.getElementById("res-score-num").textContent = `${scaledScore} 分`;
   document.getElementById("res-desc").textContent =
     `共 ${total} 題，答對 ${correctCount} 題，答錯 ${total - correctCount} 題`;
