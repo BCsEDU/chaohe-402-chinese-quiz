@@ -706,6 +706,46 @@
     gap: 24px;
   }
 
+  .bonus-callout {
+    background: #fffbeb;
+    border: 3px solid #f59e0b;
+    border-radius: 18px;
+    padding: 20px 24px;
+    margin: 20px auto 26px;
+    max-width: 680px;
+    text-align: left;
+    font-size: calc(1.25rem * var(--font-scale));
+    font-weight: 800;
+    color: #92400e;
+    line-height: 1.6;
+  }
+
+  .retry-bar {
+    background: linear-gradient(135deg, #7c2d12 0%, #c2410c 100%);
+    color: #fff;
+    border-radius: 18px;
+    padding: 18px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .prev-wrong-pill {
+    display: inline-block;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1.5px solid #fca5a5;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: calc(1.05rem * var(--font-scale));
+    font-weight: 800;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+
   .keyboard-hint {
     text-align: center;
     margin-top: 22px;
@@ -850,18 +890,46 @@
 
   <!-- 視圖 5：測驗結果與訂正畫面 -->
   <section id="view-exam-result" class="view-panel">
-    <div class="result-card">
+    <div class="result-card" id="res-card">
       <div class="result-score-title" id="res-student-header">測驗已送出！</div>
       <div class="result-score-num" id="res-score-num">100 分</div>
       <div class="result-desc" id="res-desc">共 15 題，答對 15 題，答錯 0 題</div>
+      <div class="bonus-callout" id="res-bonus-callout" style="display:none;"></div>
       <div class="result-actions">
-        <button class="ctrl-btn primary" onclick="showCorrectionSheet()" style="font-size:1.35rem;">🔍 查看完整試卷訂正與詳解</button>
+        <button class="ctrl-btn" id="btn-start-retry" onclick="startWrongQuestionRetry()" style="display:none;background:#d97706;color:#fff;border-color:#b45309;font-size:1.4rem;">
+          💪 進行個人錯題重做（全對 +10 分）
+        </button>
+        <button class="ctrl-btn primary" id="btn-toggle-correction" onclick="showCorrectionSheet()" style="display:none;font-size:1.35rem;">
+          🔍 查看完整試卷訂正與詳解
+        </button>
         <button class="ctrl-btn" onclick="goHome()" style="font-size:1.35rem;">🏠 返回選課首頁</button>
       </div>
     </div>
 
     <!-- 學生個人訂正詳解清單 -->
     <div id="correction-sheet" style="display:none;" class="review-sheet-wrap"></div>
+  </section>
+
+  <!-- 視圖 6：個人錯題重做畫面 -->
+  <section id="view-exam-retry" class="view-panel">
+    <div class="retry-bar">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span class="exam-student-badge" id="retry-badge-info">4-2 班 01 號</span>
+        <span style="font-size:calc(1.4rem * var(--font-scale));font-weight:900;" id="retry-lesson-title">個人錯題重做挑戰（全部答對加 10 分）</span>
+      </div>
+      <div class="exam-progress-text" id="retry-progress-text" style="color:#ffedd5;">待重做 0 題</div>
+    </div>
+
+    <div id="retry-questions-list" style="display:flex;flex-direction:column;gap:24px;"></div>
+
+    <div class="stage-controls" style="margin-top:26px;justify-content:center;">
+      <button class="ctrl-btn success" id="btn-submit-retry" onclick="submitWrongQuestionRetry()" style="font-size:calc(1.55rem * var(--font-scale));padding:18px 36px;">
+        ✅ 送出錯題重做（限一次機會）
+      </button>
+      <button class="ctrl-btn" onclick="cancelRetryBackToResult()" style="font-size:calc(1.3rem * var(--font-scale));">
+        ↩ 先返回成績頁
+      </button>
+    </div>
   </section>
 </main>
 
@@ -1521,33 +1589,130 @@ function renderProjList() {
   container.innerHTML = html;
 }
 
-// ==================== 模式二：學生線上測驗 ====================
+// ==================== 模式二：學生線上測驗（每日限一次 + 錯題重做 +10 分） ====================
 let currentStudent = { class: "4-2", seat: 1 };
 let examQIndex = 0;
 let examAnswers = {}; // { qIndex: optIdx (0~3) }
+let currentSubmission = null; // 當次或當日測驗紀錄
+let retryAnswersMap = {}; // { qIndex: optIdx (0~3) }
+
+function getTaipeiToday() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(new Date());
+}
+
+function getDailyStorageKey(examId, cls, seat) {
+  return `exam_daily_${getTaipeiToday()}_${examId}_${cls}_${seat}`;
+}
+
+function saveDailyLocalRecord(examId, cls, seat, record) {
+  try {
+    localStorage.setItem(getDailyStorageKey(examId, cls, seat), JSON.stringify(record));
+  } catch (e) { console.warn(e); }
+}
+
+function loadDailyLocalRecord(examId, cls, seat) {
+  try {
+    const raw = localStorage.getItem(getDailyStorageKey(examId, cls, seat));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function clearDailyLocalRecord(examId, cls, seat) {
+  try {
+    localStorage.removeItem(getDailyStorageKey(examId, cls, seat));
+  } catch {}
+}
+
+async function checkStudentDailyStatus(examId, cls, seat) {
+  try {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/check_student_exam_status`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ p_exam_id: examId, p_class: cls, p_seat: seat })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.found) {
+        saveDailyLocalRecord(examId, cls, seat, data);
+        return { status: "found", record: data };
+      } else {
+        clearDailyLocalRecord(examId, cls, seat);
+        return { status: "not_found" };
+      }
+    }
+  } catch (err) {
+    console.warn("查詢後端紀錄失敗，改用本機快取檢查:", err);
+  }
+  const localRec = loadDailyLocalRecord(examId, cls, seat);
+  return localRec ? { status: "found", record: localRec } : { status: "not_found" };
+}
 
 function openExamLogin(lessonId) {
   currentLesson = LESSONS.find(l => l.id === lessonId);
   if (!currentLesson || !currentLesson.ready) return;
   document.getElementById("login-lesson-title").textContent = `${currentLesson.lessonNum}《${currentLesson.title}》線上測驗`;
   document.getElementById("student-seat").value = "";
+  const loginBtn = document.querySelector("#student-login-form .btn-submit-login");
+  if (loginBtn) {
+    loginBtn.disabled = false;
+    loginBtn.textContent = "🚀 開始線上測驗";
+  }
   showView("view-exam-login");
 }
 
-function startStudentExam(e) {
+async function startStudentExam(e) {
   e.preventDefault();
   const seatVal = document.getElementById("student-seat").value;
   if (!seatVal) {
     alert("請先選擇您的座號！");
     return;
   }
-  currentStudent = {
-    class: document.getElementById("student-class").value,
-    seat: parseInt(seatVal, 10)
-  };
+  const cls = document.getElementById("student-class").value;
+  const seat = parseInt(seatVal, 10);
+  const examId = currentLesson.examId || `${currentLesson.id}-chinese`;
 
+  const loginBtn = document.querySelector("#student-login-form .btn-submit-login");
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.textContent = "⏳ 檢查今日作答紀錄中...";
+  }
+
+  const check = await checkStudentDailyStatus(examId, cls, seat);
+
+  if (loginBtn) {
+    loginBtn.disabled = false;
+    loginBtn.textContent = "🚀 開始線上測驗";
+  }
+
+  currentStudent = { class: cls, seat: seat };
+
+  if (check.status === "found") {
+    currentSubmission = check.record;
+    examAnswers = {};
+    (currentSubmission.answers || []).forEach((ansVal, idx) => {
+      if (ansVal >= 1 && ansVal <= 4) examAnswers[idx] = ansVal - 1;
+    });
+
+    const rawPct = Math.round((currentSubmission.score / currentSubmission.total) * 100);
+    if (currentSubmission.score < currentSubmission.total && currentSubmission.retry_passed === null) {
+      alert(`您今天已經完成過正式測驗囉！（原測驗成績：${rawPct} 分，每人每日限測驗一次）\n\n目前還有錯題尚未完成重做，現在為您前往個人錯題訂正頁面！`);
+    } else {
+      alert(`您今天已經完成過本次測驗囉！（每人每日限測驗一次，不能重複作答）\n\n即將為您顯示今日的測驗成績與詳解。`);
+    }
+    currentMode = "result";
+    renderExamResultView(true);
+    showView("view-exam-result");
+    return;
+  }
+
+  currentSubmission = null;
   examQIndex = 0;
   examAnswers = {};
+  retryAnswersMap = {};
   currentMode = "exam";
 
   const num = currentStudent.seat < 10 ? `0${currentStudent.seat}` : `${currentStudent.seat}`;
@@ -1625,7 +1790,7 @@ async function confirmSubmitExam() {
     const ok = confirm(`注意：您尚有第 ${missing.join("、")} 題尚未作答！\n\n確定現在就要交卷嗎？`);
     if (!ok) return;
   } else {
-    if (!confirm("確定要送出試卷嗎？送出後即完成測驗。")) return;
+    if (!confirm("確定要送出試卷嗎？送出後即完成測驗（每日限測驗一次）。")) return;
   }
 
   const submitBtn = document.getElementById("btn-submit-exam");
@@ -1645,11 +1810,11 @@ async function confirmSubmitExam() {
     }
   }
 
-  const scaledScore = Math.round((correctCount / total) * 100);
+  const examId = currentLesson.examId || `${currentLesson.id}-chinese`;
   const clientId = (crypto.randomUUID ? crypto.randomUUID() : `cid-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
   const payload = {
-    exam_id: currentLesson.examId || `${currentLesson.id}-chinese`,
+    exam_id: examId,
     grade: 4,
     subject: "chinese",
     year: 114,
@@ -1662,6 +1827,8 @@ async function confirmSubmitExam() {
     is_deleted: false,
     client_id: clientId
   };
+
+  let duplicateBlocked = false;
 
   // 傳送到 Supabase
   try {
@@ -1676,45 +1843,300 @@ async function confirmSubmitExam() {
       body: JSON.stringify(payload)
     });
     if (!res.ok && res.status !== 409) {
-      console.warn("後端儲存狀態碼:", res.status);
+      const errTxt = await res.text();
+      if (errTxt.includes("already_submitted_today")) {
+        duplicateBlocked = true;
+      } else {
+        console.warn("後端儲存狀態碼:", res.status, errTxt);
+      }
     }
   } catch (err) {
     console.error("傳送至 Supabase 錯誤:", err);
   }
 
-  // 本機 localStorage 備份一份
-  const localBackup = JSON.parse(localStorage.getItem("chinese_quiz_submissions") || "[]");
-  localBackup.push({ ...payload, created_at: new Date().toISOString() });
-  localStorage.setItem("chinese_quiz_submissions", JSON.stringify(localBackup));
-
-  // 顯示結果
   submitBtn.disabled = false;
   submitBtn.textContent = "📝 檢查並交卷";
 
-  document.getElementById("res-student-header").textContent =
-    `🎉 ${currentStudent.class} 班 ${currentStudent.seat} 號 測驗已送出！`;
-  document.getElementById("res-score-num").textContent = `${scaledScore} 分`;
-  document.getElementById("res-desc").textContent =
-    `共 ${total} 題，答對 ${correctCount} 題，答錯 ${total - correctCount} 題`;
+  if (duplicateBlocked) {
+    alert("您今天已經交過本次測驗的考卷了！每人每日限測驗一次，將為您載入今天的測驗結果。");
+    const check = await checkStudentDailyStatus(examId, currentStudent.class, currentStudent.seat);
+    if (check.status === "found") {
+      currentSubmission = check.record;
+      examAnswers = {};
+      (currentSubmission.answers || []).forEach((v, idx) => {
+        if (v >= 1 && v <= 4) examAnswers[idx] = v - 1;
+      });
+      renderExamResultView(true);
+      showView("view-exam-result");
+      return;
+    }
+  }
 
-  renderCorrectionSheet();
+  currentSubmission = {
+    client_id: clientId,
+    score: correctCount,
+    total: total,
+    answers: answersArr,
+    bonus_points: 0,
+    retry_passed: null,
+    retry_answers: null,
+    created_at: new Date().toISOString()
+  };
+
+  saveDailyLocalRecord(examId, currentStudent.class, currentStudent.seat, currentSubmission);
+
+  // 本機備份清單
+  const localBackup = JSON.parse(localStorage.getItem("chinese_quiz_submissions") || "[]");
+  localBackup.push({ ...payload, created_at: currentSubmission.created_at });
+  localStorage.setItem("chinese_quiz_submissions", JSON.stringify(localBackup));
+
+  currentMode = "result";
+  renderExamResultView(false);
   showView("view-exam-result");
 }
 
-// 產生學生個人訂正詳解清單
+function getWrongQuestionIndices() {
+  if (!currentSubmission || !currentLesson) return [];
+  const wrongs = [];
+  currentLesson.questions.forEach((q, idx) => {
+    const val = (currentSubmission.answers && currentSubmission.answers[idx]) || 0;
+    if (val - 1 !== q.answer) wrongs.push(idx);
+  });
+  return wrongs;
+}
+
+function renderExamResultView(isReturning) {
+  const total = currentSubmission.total;
+  const correctCount = currentSubmission.score;
+  const wrongIndices = getWrongQuestionIndices();
+  const rawPct = Math.round((correctCount / total) * 100);
+  const bonus = Number(currentSubmission.bonus_points || 0);
+  const finalPct = Math.min(100, rawPct + bonus);
+  const retryState = currentSubmission.retry_passed; // null | true | false
+
+  const resCard = document.getElementById("res-card");
+  const headerEl = document.getElementById("res-student-header");
+  const scoreEl = document.getElementById("res-score-num");
+  const descEl = document.getElementById("res-desc");
+  const calloutEl = document.getElementById("res-bonus-callout");
+  const btnRetry = document.getElementById("btn-start-retry");
+  const btnCorrection = document.getElementById("btn-toggle-correction");
+  const sheet = document.getElementById("correction-sheet");
+
+  sheet.style.display = "none";
+
+  const seatLabel = `${currentStudent.class} 班 ${currentStudent.seat} 號`;
+
+  if (wrongIndices.length === 0) {
+    // 狀態 B：原卷滿分
+    resCard.style.borderColor = "#059669";
+    scoreEl.style.color = "#059669";
+    headerEl.textContent = `🎉 ${seatLabel} ${isReturning ? '今日測驗成績（滿分）' : '太棒了！全部答對！'}`;
+    scoreEl.textContent = "100 分";
+    descEl.textContent = `共 ${total} 題，全部答對！（不需進行錯題重做）`;
+    calloutEl.style.display = "none";
+    btnRetry.style.display = "none";
+    btnCorrection.style.display = "inline-flex";
+    renderCorrectionSheet();
+  } else if (retryState === null || retryState === undefined) {
+    // 狀態 A：有錯題且尚未重做（不揭露詳解，提供重做挑戰）
+    resCard.style.borderColor = "#2563eb";
+    scoreEl.style.color = "#1e40af";
+    headerEl.textContent = `📝 ${seatLabel} ${isReturning ? '今日測驗紀錄（尚未完成錯題重做）' : '正式測驗已送出！'}`;
+    scoreEl.textContent = `${rawPct} 分`;
+    descEl.textContent = `共 ${total} 題，答對 ${correctCount} 題，答錯 ${wrongIndices.length} 題（當下分數已送至教師後台）`;
+
+    calloutEl.style.display = "block";
+    calloutEl.innerHTML = `💪 <b>錯題再戰加分機會：</b>您共有 <b>${wrongIndices.length} 題</b>答錯（第 ${wrongIndices.map(i => i + 1).join("、")} 題）。<br>現在可以針對個人錯題<b>再做一次</b>，只要全部答對就可以再加 <b>10 分</b>（最高 100 分）！若未完成重做，將以當下測驗的 ${rawPct} 分為主。`;
+
+    btnRetry.style.display = "inline-flex";
+    btnRetry.textContent = `💪 進行個人錯題重做（共 ${wrongIndices.length} 題，全對 +10 分）`;
+    btnCorrection.style.display = "none"; // 未重做前隱藏解答，避免看答案照抄
+  } else if (retryState === true) {
+    // 狀態 C1：錯題重做全部答對 (+10)
+    resCard.style.borderColor = "#059669";
+    scoreEl.style.color = "#059669";
+    headerEl.textContent = `🎊 ${seatLabel} 錯題重做全部答對！`;
+    scoreEl.textContent = `${finalPct} 分`;
+    const capNote = (rawPct + bonus > 100) ? "（滿分上限 100 分）" : "";
+    descEl.textContent = `原測驗成績 ${rawPct} 分 ＋ 錯題全對加 ${bonus} 分 ＝ 最終成績 ${finalPct} 分${capNote}`;
+    calloutEl.style.display = "block";
+    calloutEl.style.background = "#dcfce7";
+    calloutEl.style.borderColor = "#16a34a";
+    calloutEl.style.color = "#14532d";
+    calloutEl.innerHTML = `✅ 已成功獲得 <b>+10 分</b>訂正加分，最終成績已更新傳送至教師後台！`;
+
+    btnRetry.style.display = "none";
+    btnCorrection.style.display = "inline-flex";
+    renderCorrectionSheet();
+  } else {
+    // 狀態 C2：錯題重做未全對 (+0)
+    resCard.style.borderColor = "#d97706";
+    scoreEl.style.color = "#b45309";
+    headerEl.textContent = `📋 ${seatLabel} 已完成測驗與錯題訂正`;
+    scoreEl.textContent = `${rawPct} 分`;
+    descEl.textContent = `共 ${total} 題，原答對 ${correctCount} 題（錯題重做未全部答對，維持原測驗分數 ${rawPct} 分）`;
+    calloutEl.style.display = "block";
+    calloutEl.style.background = "#fffbeb";
+    calloutEl.style.borderColor = "#f59e0b";
+    calloutEl.style.color = "#92400e";
+    calloutEl.innerHTML = `💡 錯題重做僅限一次機會，這次未能全對非常可惜，請點下方「查看完整試卷訂正與詳解」弄懂每一題喔！`;
+
+    btnRetry.style.display = "none";
+    btnCorrection.style.display = "inline-flex";
+    renderCorrectionSheet();
+  }
+}
+
+// ==================== 個人錯題重做流程 ====================
+function startWrongQuestionRetry() {
+  const wrongIndices = getWrongQuestionIndices();
+  if (wrongIndices.length === 0) return;
+
+  retryAnswersMap = {};
+  currentMode = "retry";
+
+  const num = currentStudent.seat < 10 ? `0${currentStudent.seat}` : `${currentStudent.seat}`;
+  document.getElementById("retry-badge-info").textContent = `${currentStudent.class} 班 ${num} 號`;
+  document.getElementById("retry-lesson-title").textContent =
+    `${currentLesson.lessonNum}《${currentLesson.title}》個人錯題重做（全部答對加 10 分）`;
+
+  renderRetryList();
+  showView("view-exam-retry");
+}
+
+function renderRetryList() {
+  const wrongIndices = getWrongQuestionIndices();
+  const answeredCnt = Object.keys(retryAnswersMap).length;
+  document.getElementById("retry-progress-text").textContent =
+    `已重寫 ${answeredCnt} / ${wrongIndices.length} 題`;
+
+  const container = document.getElementById("retry-questions-list");
+  container.innerHTML = wrongIndices.map(qIdx => {
+    const q = currentLesson.questions[qIdx];
+    const prevChoice = (currentSubmission.answers && currentSubmission.answers[qIdx]) ? currentSubmission.answers[qIdx] - 1 : undefined;
+    const retryChoice = retryAnswersMap[qIdx];
+    const singleCol = q.singleCol || q.options.some(o => o.length > 16);
+
+    const optsHtml = q.options.map((optText, optIdx) => {
+      const isSel = (retryChoice === optIdx);
+      return `
+        <button class="option-btn ${isSel ? 'selected-student' : ''}" onclick="selectRetryOption(${qIdx}, ${optIdx})">
+          <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+          <span>${formatStemHTML(optText)}</span>
+        </button>
+      `;
+    }).join("");
+
+    return `
+      <div class="stage-card">
+        <div class="question-stem">
+          <div style="margin-bottom:12px;">
+            <span class="question-num-pill">第 ${qIdx + 1} 題</span>
+            <span class="prev-wrong-pill">上次誤選：${prevChoice !== undefined ? CIRCLED_NUMS[prevChoice] : '未作答'}</span>
+          </div>
+          ${formatStemHTML(q.stem)}
+        </div>
+        <div class="options-grid ${singleCol ? 'single-col' : ''}">${optsHtml}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function selectRetryOption(qIdx, optIdx) {
+  retryAnswersMap[qIdx] = optIdx;
+  renderRetryList();
+}
+
+function cancelRetryBackToResult() {
+  currentMode = "result";
+  renderExamResultView(true);
+  showView("view-exam-result");
+}
+
+async function submitWrongQuestionRetry() {
+  const wrongIndices = getWrongQuestionIndices();
+  const missing = wrongIndices.filter(qIdx => retryAnswersMap[qIdx] === undefined);
+
+  if (missing.length > 0) {
+    alert(`您還有第 ${missing.map(i => i + 1).join("、")} 題尚未重寫喔！請全部作答完成再送出。`);
+    return;
+  }
+
+  if (!confirm("確定要送出錯題重做嗎？送出後將立即批改並計算最終成績（限重做一次）。")) return;
+
+  const btn = document.getElementById("btn-submit-retry");
+  btn.disabled = true;
+  btn.textContent = "⏳ 批改並更新成績中...";
+
+  const total = currentSubmission.total;
+  const retryAnswersFull = new Array(total).fill(0);
+  let allCorrect = true;
+
+  wrongIndices.forEach(qIdx => {
+    const chosen = retryAnswersMap[qIdx];
+    retryAnswersFull[qIdx] = chosen + 1;
+    if (chosen !== currentLesson.questions[qIdx].answer) {
+      allCorrect = false;
+    }
+  });
+
+  // 呼叫 Supabase RPC 更新錯題重做結果
+  try {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/submit_exam_retry`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        p_client_id: currentSubmission.client_id,
+        p_retry_answers: retryAnswersFull,
+        p_retry_passed: allCorrect
+      })
+    });
+    if (!res.ok) {
+      console.warn("後端更新錯題重做狀態碼:", res.status);
+    }
+  } catch (err) {
+    console.error("傳送錯題重做至 Supabase 錯誤:", err);
+  }
+
+  btn.disabled = false;
+  btn.textContent = "✅ 送出錯題重做（限一次機會）";
+
+  currentSubmission.retry_answers = retryAnswersFull;
+  currentSubmission.retry_passed = allCorrect;
+  currentSubmission.bonus_points = allCorrect ? 10 : 0;
+
+  const examId = currentLesson.examId || `${currentLesson.id}-chinese`;
+  saveDailyLocalRecord(examId, currentStudent.class, currentStudent.seat, currentSubmission);
+
+  currentMode = "result";
+  renderExamResultView(false);
+  showView("view-exam-result");
+}
+
+// 產生學生個人訂正詳解清單（含重做紀錄）
 function renderCorrectionSheet() {
   const container = document.getElementById("correction-sheet");
   let html = `<h2 style="font-size:2rem;font-weight:900;color:#1e3a8a;margin-bottom:12px;">📑 試卷題目訂正與詳解</h2>`;
 
   currentLesson.questions.forEach((q, idx) => {
-    const studentChoice = examAnswers[idx]; // 0~3 or undefined
-    const isCorrect = (studentChoice === q.answer);
+    const rawAnsVal = (currentSubmission && currentSubmission.answers) ? currentSubmission.answers[idx] : 0;
+    const studentChoice = rawAnsVal >= 1 ? rawAnsVal - 1 : undefined;
+    const retryVal = (currentSubmission && currentSubmission.retry_answers) ? currentSubmission.retry_answers[idx] : 0;
+    const retryChoice = retryVal >= 1 ? retryVal - 1 : undefined;
+
+    const isOrigCorrect = (studentChoice === q.answer);
+    const isRetryCorrect = (retryChoice === q.answer);
     const singleCol = q.singleCol || q.options.some(o => o.length > 16);
 
     const optsHtml = q.options.map((optText, optIdx) => {
       let cls = "option-btn";
       if (optIdx === q.answer) cls += " correct";
-      else if (studentChoice === optIdx) cls += " wrong";
+      else if (retryChoice === optIdx || (retryChoice === undefined && studentChoice === optIdx)) cls += " wrong";
       return `
         <div class="${cls}">
           <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
@@ -1723,11 +2145,21 @@ function renderCorrectionSheet() {
       `;
     }).join("");
 
-    const statusTag = (studentChoice === undefined)
-      ? `<span style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">未作答</span>`
-      : isCorrect
-      ? `<span style="background:#dcfce7;color:#16a34a;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">✅ 答對</span>`
-      : `<span style="background:#fee2e2;color:#dc2626;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">❌ 答錯（您的答案：${CIRCLED_NUMS[studentChoice]}）</span>`;
+    let statusTag = "";
+    if (isOrigCorrect) {
+      statusTag = `<span style="background:#dcfce7;color:#16a34a;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">✅ 初次作答答對</span>`;
+    } else if (retryChoice !== undefined) {
+      const origTxt = studentChoice !== undefined ? CIRCLED_NUMS[studentChoice] : "未答";
+      if (isRetryCorrect) {
+        statusTag = `<span style="background:#dbeafe;color:#1d4ed8;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">💪 錯題重做答對（原選 ${origTxt} → 改選 ${CIRCLED_NUMS[retryChoice]}）</span>`;
+      } else {
+        statusTag = `<span style="background:#fee2e2;color:#dc2626;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">❌ 重做仍誤（原選 ${origTxt} → 重做選 ${CIRCLED_NUMS[retryChoice]}）</span>`;
+      }
+    } else {
+      statusTag = (studentChoice === undefined)
+        ? `<span style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">未作答</span>`
+        : `<span style="background:#fee2e2;color:#dc2626;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">❌ 答錯（您的答案：${CIRCLED_NUMS[studentChoice]}）</span>`;
+    }
 
     html += `
       <div class="stage-card">

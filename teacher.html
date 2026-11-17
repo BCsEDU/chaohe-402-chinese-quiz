@@ -234,6 +234,19 @@
     font-size: 0.95rem;
   }
   .badge-del:hover { background: #dc2626; color: #fff; }
+
+  .pill-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+  .pill-perfect { background: #dcfce7; color: #15803d; }
+  .pill-retry-ok { background: #dbeafe; color: #1d4ed8; }
+  .pill-retry-fail { background: #fee2e2; color: #b91c1c; }
+  .pill-retry-wait { background: #fef3c7; color: #92400e; }
 </style>
 </head>
 <body>
@@ -312,7 +325,7 @@
     <!-- 各題答對率分析（由低到高排序） -->
     <div class="panel">
       <div class="section-title">
-        <span>📊 各題答對率分析（依答對率由低到高排列，掌握教學盲點）</span>
+        <span>📊 各題首次作答答對率分析（依答對率由低到高排列，掌握教學盲點）</span>
       </div>
       <div style="overflow-x:auto;">
         <table class="data-table">
@@ -345,10 +358,10 @@
               <th>試卷</th>
               <th>班級</th>
               <th>座號</th>
-              <th>姓名</th>
-              <th>得分 / 總題數</th>
-              <th>成績</th>
-              <th>答錯題號</th>
+              <th>原始分數</th>
+              <th>錯題重做狀態</th>
+              <th>最終成績</th>
+              <th>原始答錯題號</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -493,6 +506,37 @@ async function deleteRow(id) {
   }
 }
 
+// 計算學生原始成績、錯題重做加分、最終成績
+function computeScoreInfo(r) {
+  const rawPct = r.total ? Math.round((r.score / r.total) * 100) : 0;
+  const bonus = Number(r.bonus_points || 0);
+  const finalPct = Math.min(100, rawPct + bonus);
+
+  let statusText = "";
+  let statusClass = "";
+  let shortTag = "";
+
+  if (r.score >= r.total) {
+    statusText = "💯 原卷滿分";
+    statusClass = "pill-perfect";
+    shortTag = "原卷滿分";
+  } else if (r.retry_passed === true) {
+    statusText = "✅ 錯題全對 +10";
+    statusClass = "pill-retry-ok";
+    shortTag = `原${rawPct} +10`;
+  } else if (r.retry_passed === false) {
+    statusText = "❌ 重做未全對 (+0)";
+    statusClass = "pill-retry-fail";
+    shortTag = `原${rawPct} 未通過`;
+  } else {
+    statusText = "⏳ 尚未重做";
+    statusClass = "pill-retry-wait";
+    shortTag = "尚未重做";
+  }
+
+  return { rawPct, bonus, finalPct, statusText, statusClass, shortTag };
+}
+
 // 渲染儀表板
 function renderDashboard() {
   const selectedExam = document.getElementById("sel-exam").value;
@@ -508,10 +552,15 @@ function renderDashboard() {
   // 1. 統計方塊
   const totalCount = filtered.length;
   const uniqueStudents = new Set(filtered.map(r => `${r.class}-${r.seat}`)).size;
-  const scores = filtered.map(r => Math.round((r.score / r.total) * 100));
-  const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-  const maxScore = scores.length ? Math.max(...scores) : 0;
-  const minScore = scores.length ? Math.min(...scores) : 0;
+  const scoreInfos = filtered.map(computeScoreInfo);
+  const rawScores = scoreInfos.map(s => s.rawPct);
+  const finalScores = scoreInfos.map(s => s.finalPct);
+
+  const avgRaw = rawScores.length ? Math.round(rawScores.reduce((a, b) => a + b, 0) / rawScores.length) : 0;
+  const avgFinal = finalScores.length ? Math.round(finalScores.reduce((a, b) => a + b, 0) / finalScores.length) : 0;
+  const maxScore = finalScores.length ? Math.max(...finalScores) : 0;
+  const minScore = finalScores.length ? Math.min(...finalScores) : 0;
+  const bonusCount = filtered.filter(r => r.retry_passed === true).length;
 
   document.getElementById("stats-summary").innerHTML = `
     <div class="stat-card">
@@ -523,16 +572,20 @@ function renderDashboard() {
       <div class="stat-lbl">實際應考學生數</div>
     </div>
     <div class="stat-card">
-      <div class="stat-val" style="color:#15803d;">${avgScore}<span style="font-size:1.6rem;">分</span></div>
-      <div class="stat-lbl">班級平均成績</div>
+      <div class="stat-val" style="color:#15803d;">${avgFinal}<span style="font-size:1.6rem;">分</span></div>
+      <div class="stat-lbl">平均最終成績（原平均 ${avgRaw}分）</div>
     </div>
     <div class="stat-card">
       <div class="stat-val" style="color:#2563eb;">${maxScore}<span style="font-size:1.6rem;">分</span></div>
-      <div class="stat-lbl">最高分</div>
+      <div class="stat-lbl">最高最終成績</div>
     </div>
     <div class="stat-card">
       <div class="stat-val" style="color:#d97706;">${minScore}<span style="font-size:1.6rem;">分</span></div>
-      <div class="stat-lbl">最低分</div>
+      <div class="stat-lbl">最低最終成績</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#0284c7;">${bonusCount}</div>
+      <div class="stat-lbl">錯題全對加分人數</div>
     </div>
   `;
 
@@ -551,12 +604,12 @@ function renderDashboard() {
     const seatPad = seat < 10 ? `0${seat}` : `${seat}`;
     if (rec) {
       submittedCount++;
-      const scorePct = Math.round((rec.score / rec.total) * 100);
+      const info = computeScoreInfo(rec);
       seatsHtml += `
         <div class="seat-box submitted">
           <div class="seat-num">${seatPad} 號 ✅</div>
-          <div class="seat-score">${scorePct} 分</div>
-          <div class="seat-name">${rec.name ? rec.name : '已交卷'}</div>
+          <div class="seat-score">${info.finalPct} 分</div>
+          <div class="seat-name" style="color:${info.bonus > 0 ? '#1d4ed8' : '#15803d'};">${info.shortTag}</div>
         </div>
       `;
     } else {
@@ -626,9 +679,9 @@ function renderDashboard() {
   } else {
     tbodyStudent.innerHTML = filtered.map(r => {
       const eInfo = EXAM_KEYS[r.exam_id];
-      const pct = Math.round((r.score / r.total) * 100);
+      const info = computeScoreInfo(r);
 
-      // 計算錯題題號
+      // 計算原始錯題題號
       let wrongQs = [];
       if (eInfo && r.answers) {
         eInfo.answers.forEach((ansKey, idx) => {
@@ -643,9 +696,9 @@ function renderDashboard() {
           <td><b>${eInfo ? eInfo.name : r.exam_id}</b></td>
           <td>${r.class}</td>
           <td><b>${r.seat} 號</b></td>
-          <td>${r.name || '—'}</td>
-          <td>${r.score} / ${r.total}</td>
-          <td><b style="color:${pct >= 80 ? '#15803d' : pct >= 60 ? '#d97706' : '#dc2626'};font-size:1.2rem;">${pct} 分</b></td>
+          <td>${info.rawPct} 分 <span style="color:#64748b;font-size:0.95rem;">(${r.score}/${r.total})</span></td>
+          <td><span class="pill-status ${info.statusClass}">${info.statusText}</span></td>
+          <td><b style="color:${info.finalPct >= 80 ? '#15803d' : info.finalPct >= 60 ? '#d97706' : '#dc2626'};font-size:1.25rem;">${info.finalPct} 分</b></td>
           <td><span style="color:#dc2626;font-weight:800;">${wrongQs.length ? wrongQs.map(n => `第${n}題`).join('、') : '全對 💯'}</span></td>
           <td>
             <button class="badge-del" onclick="deleteRow(${r.id})">刪除</button>
@@ -672,12 +725,12 @@ function exportCSV() {
   }
 
   const rows = [
-    ["交卷時間", "試卷代號", "試卷名稱", "班級", "座號", "姓名", "答對題數", "總題數", "成績百分比", "答錯題號"]
+    ["交卷時間", "試卷代號", "試卷名稱", "班級", "座號", "答對題數", "總題數", "原始分數", "錯題重做狀態", "訂正加分", "最終成績", "原始答錯題號"]
   ];
 
   filtered.forEach(r => {
     const eInfo = EXAM_KEYS[r.exam_id];
-    const pct = Math.round((r.score / r.total) * 100);
+    const info = computeScoreInfo(r);
     let wrongQs = [];
     if (eInfo && r.answers) {
       eInfo.answers.forEach((ansKey, idx) => {
@@ -690,10 +743,12 @@ function exportCSV() {
       eInfo ? eInfo.name : r.exam_id,
       r.class,
       r.seat,
-      r.name || "",
       r.score,
       r.total,
-      pct,
+      info.rawPct,
+      info.statusText,
+      info.bonus,
+      info.finalPct,
       wrongQs.join(" ")
     ]);
   });
