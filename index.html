@@ -1623,7 +1623,128 @@ function clearDailyLocalRecord(examId, cls, seat) {
   } catch {}
 }
 
+async function sendRetryToSupabase(examId, cls, seat, clientId, total, retryAnswersFull, allCorrect) {
+  // 1. 先嘗試呼叫已升級的 RPC submit_exam_retry
+  try {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/submit_exam_retry`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        p_client_id: clientId,
+        p_retry_answers: retryAnswersFull,
+        p_retry_passed: allCorrect
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.ok || data.reason === "already_retried_or_not_found")) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn("submit_exam_retry RPC 失敗，改用備援寫入:", err);
+  }
+
+  // 2. 備援：若尚未執行 supabase_upgrade.sql（RPC 回 404），直接寫入 __retry 紀錄至 submissions
+  try {
+    const fallbackPayload = {
+      exam_id: `${examId}__retry`,
+      grade: 4,
+      subject: "chinese",
+      year: 114,
+      class: cls,
+      seat: seat,
+      name: clientId, // 關聯原始測驗 client_id
+      answers: retryAnswersFull,
+      score: allCorrect ? 10 : 0,
+      total: total,
+      is_deleted: false,
+      client_id: `${clientId}_retry`
+    };
+    const res2 = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/submissions`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(fallbackPayload)
+    });
+    return res2.ok || res2.status === 409;
+  } catch (err) {
+    console.error("備援寫入錯題重做失敗:", err);
+    return false;
+  }
+}
+
+async function syncPendingLocalRetries() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("exam_daily_")) keys.push(k);
+    }
+    for (const key of keys) {
+      const rec = JSON.parse(localStorage.getItem(key) || "null");
+      if (!rec || rec.retry_passed === null || rec.retry_passed === undefined || rec._retry_synced) continue;
+      if (!rec.client_id || !rec.retry_answers) continue;
+
+      let examId = rec.exam_id;
+      let cls = rec.class;
+      let seat = rec.seat;
+      if (!examId || !cls || !seat) {
+        const rest = key.replace(/^exam_daily_\d{4}-\d{2}-\d{2}_/, "");
+        const parts = rest.split("_");
+        if (parts.length >= 3) {
+          seat = parseInt(parts.pop(), 10);
+          cls = parts.pop();
+          examId = parts.join("_");
+        }
+      }
+      if (!examId || !cls || !seat) continue;
+
+      const ok = await sendRetryToSupabase(
+        examId,
+        cls,
+        seat,
+        rec.client_id,
+        rec.total,
+        rec.retry_answers,
+        rec.retry_passed === true
+      );
+      if (ok) {
+        rec._retry_synced = true;
+        localStorage.setItem(key, JSON.stringify(rec));
+      }
+    }
+  } catch (e) {
+    console.warn("背景同步錯題重做失敗:", e);
+  }
+}
+
 async function checkStudentDailyStatus(examId, cls, seat) {
+  const localRec = loadDailyLocalRecord(examId, cls, seat);
+  if (localRec && localRec.retry_passed !== null && localRec.retry_passed !== undefined && !localRec._retry_synced) {
+    const synced = await sendRetryToSupabase(
+      examId,
+      cls,
+      seat,
+      localRec.client_id,
+      localRec.total,
+      localRec.retry_answers || [],
+      localRec.retry_passed === true
+    );
+    if (synced) {
+      localRec._retry_synced = true;
+      saveDailyLocalRecord(examId, cls, seat, localRec);
+    }
+  }
+
   try {
     const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/check_student_exam_status`, {
       method: "POST",
@@ -1637,6 +1758,12 @@ async function checkStudentDailyStatus(examId, cls, seat) {
     if (res.ok) {
       const data = await res.json();
       if (data && data.found) {
+        if (data.retry_passed === null && localRec && localRec.client_id === data.client_id && localRec.retry_passed !== null) {
+          data.retry_passed = localRec.retry_passed;
+          data.retry_answers = localRec.retry_answers;
+          data.bonus_points = localRec.bonus_points;
+          data._retry_synced = localRec._retry_synced;
+        }
         saveDailyLocalRecord(examId, cls, seat, data);
         return { status: "found", record: data };
       } else {
@@ -1647,7 +1774,6 @@ async function checkStudentDailyStatus(examId, cls, seat) {
   } catch (err) {
     console.warn("查詢後端紀錄失敗，改用本機快取檢查:", err);
   }
-  const localRec = loadDailyLocalRecord(examId, cls, seat);
   return localRec ? { status: "found", record: localRec } : { status: "not_found" };
 }
 
@@ -1873,6 +1999,9 @@ async function confirmSubmitExam() {
   }
 
   currentSubmission = {
+    exam_id: examId,
+    class: currentStudent.class,
+    seat: currentStudent.seat,
     client_id: clientId,
     score: correctCount,
     total: total,
@@ -2081,37 +2210,35 @@ async function submitWrongQuestionRetry() {
     }
   });
 
-  // 呼叫 Supabase RPC 更新錯題重做結果
-  try {
-    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/submit_exam_retry`, {
-      method: "POST",
-      headers: {
-        "apikey": SUPABASE_CONFIG.ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        p_client_id: currentSubmission.client_id,
-        p_retry_answers: retryAnswersFull,
-        p_retry_passed: allCorrect
-      })
-    });
-    if (!res.ok) {
-      console.warn("後端更新錯題重做狀態碼:", res.status);
-    }
-  } catch (err) {
-    console.error("傳送錯題重做至 Supabase 錯誤:", err);
-  }
+  const examId = currentLesson.examId || `${currentLesson.id}-chinese`;
+
+  // 呼叫後端儲存錯題重做結果（自動支援 RPC 與 __retry 備援寫入）
+  const synced = await sendRetryToSupabase(
+    examId,
+    currentStudent.class,
+    currentStudent.seat,
+    currentSubmission.client_id,
+    total,
+    retryAnswersFull,
+    allCorrect
+  );
 
   btn.disabled = false;
   btn.textContent = "✅ 送出錯題重做（限一次機會）";
 
+  currentSubmission.exam_id = examId;
+  currentSubmission.class = currentStudent.class;
+  currentSubmission.seat = currentStudent.seat;
   currentSubmission.retry_answers = retryAnswersFull;
   currentSubmission.retry_passed = allCorrect;
   currentSubmission.bonus_points = allCorrect ? 10 : 0;
+  currentSubmission._retry_synced = synced;
 
-  const examId = currentLesson.examId || `${currentLesson.id}-chinese`;
   saveDailyLocalRecord(examId, currentStudent.class, currentStudent.seat, currentSubmission);
+
+  if (!synced) {
+    alert("注意：目前網路連線似乎不穩，您的錯題重做結果已先暫存在這台裝置，待網路恢復並重新開啟網頁時會自動傳送給老師！");
+  }
 
   currentMode = "result";
   renderExamResultView(false);
@@ -2234,6 +2361,7 @@ window.addEventListener("keydown", (e) => {
 // 初始化
 initSeatSelect();
 renderHome();
+syncPendingLocalRetries();
 </script>
 </body>
 </html>

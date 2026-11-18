@@ -424,7 +424,7 @@ async function handleLogin(e) {
 
     const data = await res.json();
     currentPw = pw;
-    allSubmissions = data;
+    allSubmissions = mergeRetryRows(data);
 
     document.getElementById("sec-login").style.display = "none";
     document.getElementById("sec-dashboard").style.display = "block";
@@ -463,7 +463,7 @@ async function fetchData() {
       body: JSON.stringify({ pw: currentPw })
     });
     if (res.ok) {
-      allSubmissions = await res.json();
+      allSubmissions = mergeRetryRows(await res.json());
       renderDashboard();
       document.getElementById("txt-last-update").textContent =
         `最後更新：${new Date().toLocaleTimeString("zh-TW", { hour12: false })}`;
@@ -482,9 +482,55 @@ function startAutoRefresh() {
   }, 5000);
 }
 
-// 刪除單筆作答
+function getTaipeiDay(isoStr) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(new Date(isoStr));
+}
+
+function mergeRetryRows(rawRows) {
+  const mainRows = [];
+  const retryRows = [];
+  rawRows.forEach(r => {
+    if (r.exam_id && r.exam_id.endsWith("__retry")) {
+      retryRows.push(r);
+    } else {
+      mainRows.push({ ...r });
+    }
+  });
+
+  const byClientId = {};
+  mainRows.forEach(m => {
+    if (m.client_id) byClientId[m.client_id] = m;
+  });
+
+  retryRows.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  retryRows.forEach(rr => {
+    const baseExamId = rr.exam_id.replace(/__retry$/, "");
+    const rrDay = getTaipeiDay(rr.created_at);
+    let target = (rr.name && byClientId[rr.name]) ? byClientId[rr.name] : null;
+    if (!target) {
+      target = mainRows.find(m =>
+        m.exam_id === baseExamId &&
+        m.class === rr.class &&
+        m.seat === rr.seat &&
+        getTaipeiDay(m.created_at) === rrDay
+      );
+    }
+    if (target && target.score < target.total && (target.retry_passed === null || target.retry_passed === undefined)) {
+      target._retry_id = rr.id;
+      target.bonus_points = Number(rr.score || 0);
+      target.retry_passed = (Number(rr.score || 0) === 10);
+      target.retry_answers = rr.answers;
+      target.retry_at = rr.created_at;
+    }
+  });
+
+  return mainRows;
+}
+
+// 刪除單筆作答（若有關聯的 __retry 紀錄一併刪除）
 async function deleteRow(id) {
   if (!confirm("確定要刪除這筆學生的作答紀錄嗎？")) return;
+  const rec = allSubmissions.find(x => x.id === id);
   try {
     const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/teacher_delete_submission`, {
       method: "POST",
@@ -496,6 +542,17 @@ async function deleteRow(id) {
       body: JSON.stringify({ pw: currentPw, sid: id })
     });
     if (res.ok) {
+      if (rec && rec._retry_id) {
+        await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/teacher_delete_submission`, {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_CONFIG.ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ pw: currentPw, sid: rec._retry_id })
+        }).catch(() => {});
+      }
       allSubmissions = allSubmissions.filter(x => x.id !== id);
       renderDashboard();
     } else {
