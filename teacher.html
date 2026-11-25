@@ -257,6 +257,122 @@
   .pill-retry-ok { background: #dbeafe; color: #1d4ed8; }
   .pill-retry-fail { background: #fee2e2; color: #b91c1c; }
   .pill-retry-wait { background: #fef3c7; color: #92400e; }
+  .pill-support {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 0.85rem;
+    background: #ede9fe;
+    color: #5b21b6;
+    border: 1.5px solid #c4b5fd;
+    margin-left: 6px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .seat-ver-tag {
+    display: inline-block;
+    margin-top: 3px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 900;
+    background: #ede9fe;
+    color: #5b21b6;
+    border: 1px solid #c4b5fd;
+  }
+  .badge-detail {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #93c5fd;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 0.95rem;
+    margin-right: 6px;
+  }
+  .badge-detail:hover { background: #1d4ed8; color: #fff; }
+
+  /* 差異化名單管理面板 */
+  .support-panel {
+    background: #faf5ff;
+    border-color: #c4b5fd;
+  }
+  .support-status-bar {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 14px;
+    background: #ede9fe;
+    color: #4c1d95;
+  }
+  .support-status-bar.warn {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .support-status-bar.ok {
+    background: #dcfce7;
+    color: #14532d;
+  }
+  .support-roster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 14px 0 18px;
+  }
+  .support-roster-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: #fff;
+    border: 1.5px solid #ddd6fe;
+    border-radius: 12px;
+    padding: 10px 14px;
+  }
+  .token-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9rem;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+
+  /* 作答明細 Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-card {
+    background: #fff;
+    border-radius: 20px;
+    max-width: 860px;
+    width: 100%;
+    max-height: 86vh;
+    overflow-y: auto;
+    padding: 26px 28px;
+    box-shadow: 0 24px 50px rgba(15, 23, 42, 0.25);
+    border: 2px solid #cbd5e1;
+  }
+  .detail-q-row {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    background: #f8fafc;
+  }
+  .detail-q-row.ok { border-color: #86efac; background: #f0fdf4; }
+  .detail-q-row.bad { border-color: #fca5a5; background: #fef2f2; }
 </style>
 </head>
 <body>
@@ -308,9 +424,17 @@
             <option value="4-3">四年三班 (4-3)</option>
             <option value="">全部班級</option>
           </select>
+
+          <label style="font-weight:900;margin-left:8px;">版本：</label>
+          <select id="sel-version" class="filter-select" onchange="renderDashboard()">
+            <option value="">全部版本</option>
+            <option value="regular">一般版</option>
+            <option value="support">支持版</option>
+          </select>
         </div>
 
         <div class="filter-group">
+          <button class="action-btn" id="btn-toggle-support-mgr" onclick="toggleSupportManager()" style="background:#f5f3ff;color:#5b21b6;border-color:#c4b5fd;">🧩 差異化名單管理</button>
           <button class="action-btn" onclick="fetchData()">🔄 立即更新</button>
           <label style="display:flex;align-items:center;gap:6px;font-weight:800;cursor:pointer;">
             <input type="checkbox" id="chk-auto-refresh" checked> 自動更新 (5s)
@@ -326,6 +450,36 @@
       <div class="stats-grid" id="stats-summary"></div>
     </div>
 
+    <!-- 差異化名單管理（折疊面板，與數學站共用 Supabase support_roster） -->
+    <div class="panel support-panel" id="panel-support-manager" style="display:none;">
+      <div class="section-title" style="color:#5b21b6;">
+        <span>🧩 差異化名單管理（國語／數學共用匿名分流名單）</span>
+        <button class="action-btn" onclick="toggleSupportManager(false)">收合 ▲</button>
+      </div>
+      <div id="support-mgr-status" class="support-status-bar">載入中...</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <label style="font-weight:900;">新增座號：</label>
+        <select id="sup-add-class" class="filter-select">
+          <option value="4-2" selected>四年二班 (4-2 / 402)</option>
+          <option value="4-1">四年一班 (4-1 / 401)</option>
+          <option value="4-3">四年三班 (4-3 / 403)</option>
+        </select>
+        <select id="sup-add-seat" class="filter-select"></select>
+        <button class="action-btn" onclick="addSupportSeat()" style="background:#6d28d9;color:#fff;border-color:#5b21b6;">➕ 加入名單</button>
+      </div>
+      <div id="support-roster-list" class="support-roster-list"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="action-btn" id="btn-save-support-cloud" onclick="saveSupportRosterToCloud()" style="background:#059669;color:#fff;border-color:#047857;">☁️ 儲存並同步至雲端（跨裝置生效）</button>
+        <button class="action-btn" onclick="loadSupportRosterForTeacher(true)">🔄 重新讀取名單</button>
+        <button class="action-btn" onclick="openSupportPreview()">👁️ 開啟支持版預覽</button>
+        <button class="action-btn" onclick="copySupportPreviewUrl()">📋 複製預覽連結 (?s=preview)</button>
+        <button class="action-btn" onclick="copySupportTokensSnippet()">📋 複製 Token 備援陣列</button>
+      </div>
+      <p style="margin-top:12px;color:#64748b;font-size:0.95rem;font-weight:700;">
+        說明：系統只會將匿名雜湊 Token 寫入雲端 <code>support_roster</code>（不存明文座號），並與數學測驗站共用同一份名單。若尚未在 Supabase 執行 <code>math-quiz/supabase_support_config.sql</code>，儲存後仍會立即於本機生效，且系統已內建預設匿名 Token 供跨裝置即時運作。
+      </p>
+    </div>
+
     <!-- 1~29 號交卷盤點板（老師一眼點名） -->
     <div class="panel">
       <div class="section-title">
@@ -335,25 +489,48 @@
       <div class="seats-board" id="seats-board"></div>
     </div>
 
-    <!-- 各題答對率分析（由低到高排序） -->
+    <!-- 各題答對率分析（由低到高排序，一般版與支持版分開統計） -->
     <div class="panel">
       <div class="section-title">
-        <span>📊 各題首次作答答對率分析（依答對率由低到高排列，掌握教學盲點）</span>
+        <span id="item-analysis-title">📊 各題首次作答答對率分析（依答對率由低到高排列，掌握教學盲點）</span>
       </div>
       <div style="overflow-x:auto;">
         <table class="data-table">
           <thead>
             <tr>
               <th style="width:90px;">題號</th>
+              <th>題目摘要</th>
               <th style="width:90px;">正解</th>
               <th style="width:110px;">答對率</th>
-              <th style="width:200px;">圖表</th>
+              <th style="width:180px;">圖表</th>
               <th style="width:100px;">答錯人數</th>
-              <th>選項分佈 (① / ② / ③ / ④ / 未答)</th>
+              <th>選項分佈</th>
             </tr>
           </thead>
           <tbody id="tbody-item-analysis"></tbody>
         </table>
+      </div>
+
+      <div id="support-item-analysis-wrap" style="display:none;margin-top:26px;padding-top:22px;border-top:2px dashed #c4b5fd;">
+        <div class="section-title" style="color:#5b21b6;font-size:1.35rem;">
+          <span id="support-item-analysis-title">🧩 支持版各題首次作答答對率分析</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:90px;">題號</th>
+                <th>題目摘要</th>
+                <th style="width:90px;">正解</th>
+                <th style="width:110px;">答對率</th>
+                <th style="width:180px;">圖表</th>
+                <th style="width:100px;">答錯人數</th>
+                <th>選項分佈</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-support-item-analysis"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -385,37 +562,227 @@
   </section>
 </main>
 
+<!-- 學生作答明細檢視 Modal -->
+<div id="detail-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this) closeDetailModal()">
+  <div class="modal-card">
+    <div class="section-title" style="margin-bottom:16px;">
+      <span id="detail-modal-title">作答明細</span>
+      <button class="action-btn" onclick="closeDetailModal()">✕ 關閉</button>
+    </div>
+    <div id="detail-modal-body"></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_CONFIG = {
   URL: "https://ppdgubracsneozahujxl.supabase.co",
   ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZGd1YnJhY3NuZW96YWh1anhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQzMDY2ODAsImV4cCI6MjEwOTg4MjY4MH0.sqLIf_xBLNyJ4zG0twoBfnMkYA8-UE0DvyG-3gXn-RE"
 };
 
-// 試卷題解對照表（供後台計算各題答對率）
+// ==================== 共用匿名分流協定（與數學測驗站 100% 互通） ====================
+const DEFAULT_SUPPORT_TOKENS = ["29ed3f137502a0b9"];
+const SUPPORT_STORAGE_KEY = "chaohe_support_tokens_v1";
+const SUPPORT_MEMO_KEY = "chaohe_support_roster_memo_v1";
+
+function canonicalSupportClass(cls) {
+  const cleaned = String(cls || "").trim().replace(/[^0-9a-zA-Z]/g, "");
+  return cleaned === "42" ? "402" : cleaned;
+}
+
+function supportSeatToken(cls, seat) {
+  const c = canonicalSupportClass(cls);
+  const s = Number(seat);
+  if (!c || !Number.isFinite(s) || s <= 0) return "";
+  const str = `chaohe-support-v1:${c}:${s}`;
+  let h1 = 0x811c9dc5;
+  let h2 = 0x050c5d1f;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 0x01000193);
+    h2 = Math.imul(h2 ^ ch, 0x85ebca6b);
+  }
+  return ((h1 >>> 0).toString(16).padStart(8, "0")) + ((h2 >>> 0).toString(16).padStart(8, "0"));
+}
+
+// 試卷題解對照表（一般版）
 const EXAM_KEYS = {
   "L7-chinese": {
     name: "第七課《到此「藝」遊》",
     total: 15,
-    // 1-indexed 正確答案：1, 3, 1, 1, 1, 3, 4, 4, 2, 3, 1, 2, 3, 4, 3
-    answers: [1, 3, 1, 1, 1, 3, 4, 4, 2, 3, 1, 2, 3, 4, 3]
+    answers: [1, 3, 1, 1, 1, 3, 4, 4, 2, 3, 1, 2, 3, 4, 3],
+    stems: [
+      "形近字：淘氣／陶瓷",
+      "字形辨識：一目十行（正確句）",
+      "形近字：迷茫／急忙／光芒",
+      "多音字「禁」：弱不禁風／禁止／禁菸／禁得起",
+      "形近字：渡輪／歡度",
+      "字義：斗室的「斗」（形容小）",
+      "字義：索然無味的「索」（毫無）",
+      "字義：不值一提的「值」（有價值）",
+      "字義：劇烈的「劇」（十分猛烈）",
+      "字義：「陶冶」（比喻培養、教育）",
+      "成語：一目十行（閱讀速度很快）",
+      "成語：樂而忘返",
+      "成語：不假思索",
+      "成語：弱不禁風",
+      "成語綜合應用（選出不恰當句）"
+    ]
   },
   "L8-chinese": {
     name: "第八課《四季的頭髮》",
     total: 20,
-    // 1-indexed 正確答案：第1~20題
-    answers: [2, 1, 3, 2, 3, 4, 4, 1, 3, 2, 4, 3, 1, 2, 1, 2, 4, 3, 2, 3]
+    answers: [2, 1, 3, 2, 3, 4, 4, 1, 3, 2, 4, 3, 1, 2, 1, 2, 4, 3, 2, 3],
+    stems: [
+      "多音字「嚇」：嚇阻／嚇壞",
+      "多音字「散」：解散／零散／散文",
+      "形近字：山坡／披上／波浪／玻璃",
+      "形近字：髮辮／辦公室／明辨是非",
+      "形近字：乖巧／版面／搭乘／滑板",
+      "形近字：陳奶奶／相框／衝鋒陷陣／熱淚盈眶",
+      "字形辨識：沒有錯別字的句子",
+      "字義：絲毫的「絲」（極細微的）",
+      "字義：這陣子的「陣」（一小段時間）",
+      "字義：古板的「板」（固執不知變通）",
+      "字義：挺身而出的「挺」（勇敢出面）",
+      "字義：披荊斬棘的「披」（拆除去除）",
+      "字義搭配辨析（散播錯誤項）",
+      "成語：蛛絲馬跡（細微線索）",
+      "成語：披荊斬棘",
+      "成語：乘風破浪",
+      "成語：魂飛魄散",
+      "成語：千里鵝毛",
+      "成語情境：偵探找尋蛛絲馬跡",
+      "成語綜合應用（選出不恰當句）"
+    ]
   },
   "L9-chinese": {
     name: "第九課《阿白觀察記》",
     total: 12,
-    // 1-indexed 正確答案：第1~12題
-    answers: [1, 3, 2, 4, 3, 1, 2, 4, 3, 1, 4, 2]
+    answers: [1, 3, 2, 4, 3, 1, 2, 4, 3, 1, 4, 2],
+    stems: [
+      "字形辨識：沒有錯別字的句子",
+      "形近字：地震／防震／提振",
+      "形近字：匆促／纏繞／踩高蹺",
+      "多音字「衝」：衝著（讀音不同）",
+      "字音：「褐」與「河」同音",
+      "詞彙結構：求偶／繞道（動詞＋名詞）",
+      "字義：急促／短促的「促」",
+      "字義：偶爾的「偶」（碰巧）",
+      "詞義：「招牌」三連音（拿手代表）",
+      "成語近義詞：怒髮衝冠／怒火中燒",
+      "成語：庸人自擾",
+      "成語綜合應用（選出不恰當句）"
+    ]
   }
 };
+
+// 試卷題解對照表（支持版，對應 index.html supportQuestions）
+const SUPPORT_EXAM_KEYS = {
+  "L7-chinese": {
+    name: "第七課《到此「藝」遊》",
+    total: 8,
+    answers: [1, 2, 2, 3, 2, 3, 3, 1],
+    optCounts: [2, 2, 2, 3, 3, 3, 3, 3],
+    stems: [
+      "形近字：（淘／陶）氣",
+      "形近字：搭（度／渡）輪",
+      "形近字：（目／自）動幫忙",
+      "字義：斗室的「斗」（形容很小）",
+      "字義：劇烈的「劇」（十分、非常猛烈）",
+      "成語：看書非常快（一目十行）",
+      "成語：玩到忘了回家（樂而忘返）",
+      "成語：身體很瘦弱（弱不禁風）"
+    ],
+    optionsList: [
+      ["淘", "陶"],
+      ["度", "渡"],
+      ["目", "自"],
+      ["形容很大", "一種食物", "形容很小"],
+      ["很輕鬆", "十分、非常猛烈", "慢慢的"],
+      ["弱不禁風", "樂而忘返", "一目十行"],
+      ["不假思索", "弱不禁風", "樂而忘返"],
+      ["弱不禁風", "一目十行", "樂而忘返"]
+    ]
+  },
+  "L8-chinese": {
+    name: "第八課《四季的頭髮》",
+    total: 10,
+    answers: [1, 2, 2, 1, 2, 3, 1, 2, 3, 1],
+    optCounts: [2, 2, 2, 2, 3, 3, 3, 3, 3, 3],
+    stems: [
+      "形近字：高高的山（坡／波）",
+      "形近字：（玻／披）上外套",
+      "形近字：兩條可愛的髮（辦／辮）",
+      "形近字：木頭相（框／眶）",
+      "字義：「這陣子」（一小段時間）",
+      "字義：古板的「板」（不靈活、固執）",
+      "字義：「挺身而出」（勇敢站出來）",
+      "成語：嚇得非常害怕（魂飛魄散）",
+      "成語：找尋細微線索（蛛絲馬跡）",
+      "成語：勇敢衝破大浪（乘風破浪）"
+    ],
+    optionsList: [
+      ["坡", "波"],
+      ["玻", "披"],
+      ["辦", "辮"],
+      ["框", "眶"],
+      ["一個地方", "一小段時間", "一種天氣"],
+      ["很新潮好玩", "一塊木頭", "不靈活、固執不知變通"],
+      ["勇敢站出來、不害怕", "嚇得躲起來", "慢慢走開"],
+      ["乘風破浪", "魂飛魄散", "千里鵝毛"],
+      ["披荊斬棘", "魂飛魄散", "蛛絲馬跡"],
+      ["乘風破浪", "千里鵝毛", "蛛絲馬跡"]
+    ]
+  },
+  "L9-chinese": {
+    name: "第九課《阿白觀察記》",
+    total: 7,
+    answers: [2, 1, 2, 2, 3, 1, 3],
+    optCounts: [2, 2, 2, 3, 3, 3, 3],
+    stems: [
+      "形近字：口（喝／渴）找水喝",
+      "形近字：大地（震／振）",
+      "形近字：彩帶（澆／繞）在柱子上",
+      "字音：「褐」與「河」同音",
+      "字義：「偶爾」（有時候、碰巧）",
+      "成語：氣得非常生氣（怒髮衝冠）",
+      "成語：歌聲非常好聽（餘音繞梁）"
+    ],
+    optionsList: [
+      ["喝", "渴"],
+      ["震", "振"],
+      ["澆", "繞"],
+      ["喝（喝茶）", "河（河流）", "賀（慶賀）"],
+      ["每天一定會", "永遠不會", "有時候、碰巧"],
+      ["怒髮衝冠", "餘音繞梁", "無獨有偶"],
+      ["庸人自擾", "怒髮衝冠", "餘音繞梁"]
+    ]
+  }
+};
+
+function isSupportRecord(r) {
+  if (!r) return false;
+  if (String(r.client_id || "").endsWith("__sup")) return true;
+  const supInfo = SUPPORT_EXAM_KEYS[r.exam_id];
+  const regInfo = EXAM_KEYS[r.exam_id];
+  if (supInfo && regInfo && Number(r.total) === supInfo.total && Number(r.total) !== regInfo.total) {
+    return true;
+  }
+  return false;
+}
+
+function getExamKeyForRecord(r) {
+  if (!r) return null;
+  return isSupportRecord(r)
+    ? (SUPPORT_EXAM_KEYS[r.exam_id] || EXAM_KEYS[r.exam_id])
+    : EXAM_KEYS[r.exam_id];
+}
 
 let currentPw = "";
 let allSubmissions = [];
 let autoRefreshTimer = null;
+let supportTokensDraft = [];
+let supportCloudMode = "unknown"; // 'cloud' | 'local' | 'unknown'
 
 async function handleLogin(e) {
   e.preventDefault();
@@ -450,6 +817,8 @@ async function handleLogin(e) {
     document.getElementById("btn-logout").style.display = "inline-flex";
 
     syncDynamicExamOptions();
+    initSupportSeatSelect();
+    loadSupportRosterForTeacher();
     renderDashboard();
     startAutoRefresh();
   } catch (err) {
@@ -468,6 +837,8 @@ function logout() {
   document.getElementById("sec-login").style.display = "block";
   document.getElementById("sec-dashboard").style.display = "none";
   document.getElementById("btn-logout").style.display = "none";
+  const supPanel = document.getElementById("panel-support-manager");
+  if (supPanel) supPanel.style.display = "none";
 }
 
 async function fetchData() {
@@ -591,7 +962,7 @@ function computeScoreInfo(r) {
   const bonus = Number(r.bonus_points || 0);
   const finalPct = Math.min(100, rawPct + bonus);
 
-  const eInfo = EXAM_KEYS[r.exam_id];
+  const eInfo = getExamKeyForRecord(r);
   let wrongCount = Math.max(0, Number(r.total || 0) - Number(r.score || 0));
   let fixedCount = null;
   if (eInfo && Array.isArray(r.retry_answers) && r.retry_answers.length === eInfo.answers.length) {
@@ -639,17 +1010,75 @@ function computeScoreInfo(r) {
   return { rawPct, bonus, finalPct, statusText, statusClass, shortTag };
 }
 
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderItemAnalysisRows(tbodyEl, examInfo, rows) {
+  if (!examInfo) {
+    tbodyEl.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#64748b;padding:24px;">請於上方選單指定單一試卷，以查看該卷各題答對率分析</td></tr>`;
+    return;
+  }
+  if (!rows || rows.length === 0) {
+    tbodyEl.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#64748b;padding:24px;">目前尚無此版本作答數據</td></tr>`;
+    return;
+  }
+
+  const circLabels = ["①", "②", "③", "④"];
+  const itemStats = examInfo.answers.map((key, i) => {
+    const optCount = (examInfo.optCounts && examInfo.optCounts[i]) ? examInfo.optCounts[i] : 4;
+    const dist = [0, 0, 0, 0, 0]; // [未答, ①, ②, ③, ④]
+    rows.forEach(r => {
+      const studentAns = (Array.isArray(r.answers) && r.answers[i] !== undefined) ? Number(r.answers[i]) : 0;
+      if (studentAns >= 0 && studentAns <= 4) dist[studentAns]++;
+      else dist[0]++;
+    });
+    const correctCount = dist[key] || 0;
+    const rate = Math.round((correctCount / rows.length) * 100);
+    const wrongCount = rows.length - correctCount;
+    const stemSummary = (examInfo.stems && examInfo.stems[i]) ? examInfo.stems[i] : `第 ${i + 1} 題`;
+    return { qNum: i + 1, stemSummary, key, optCount, rate, wrongCount, dist };
+  });
+
+  itemStats.sort((a, b) => a.rate - b.rate);
+
+  tbodyEl.innerHTML = itemStats.map(item => {
+    const barClass = (item.rate >= 75) ? "bar-high" : (item.rate >= 50) ? "bar-mid" : "bar-low";
+    const circKey = circLabels[item.key - 1] || item.key;
+    const distParts = [];
+    for (let o = 1; o <= item.optCount; o++) {
+      distParts.push(`${circLabels[o - 1]} ${item.dist[o]}`);
+    }
+    distParts.push(`未答 ${item.dist[0]}`);
+    return `
+      <tr>
+        <td><b style="font-size:1.15rem;color:#1e3a8a;">第 ${item.qNum} 題</b></td>
+        <td style="font-weight:700;color:#1e293b;">${escapeHtml(item.stemSummary)}</td>
+        <td><b style="font-size:1.2rem;color:#15803d;">${circKey}</b></td>
+        <td><b style="font-size:1.15rem;">${item.rate}%</b></td>
+        <td>
+          <div class="bar-container">
+            <div class="bar-inner ${barClass}" style="width:${item.rate}%;"></div>
+          </div>
+        </td>
+        <td><b style="color:${item.wrongCount > 0 ? '#dc2626' : '#64748b'};">${item.wrongCount} 人</b></td>
+        <td style="color:#475569;font-size:1rem;">${distParts.join(" / ")}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
 // 渲染儀表板
 function renderDashboard() {
   const selectedExam = document.getElementById("sel-exam").value;
-  const selectedClass = document.getElementById("sel-class").value;
+  const selectedVersion = document.getElementById("sel-version").value;
 
   // 篩選資料
-  const filtered = allSubmissions.filter(r => {
-    if (selectedExam && r.exam_id !== selectedExam) return false;
-    if (selectedClass && r.class !== selectedClass) return false;
-    return true;
-  });
+  const filtered = getFilteredSubmissions();
 
   // 1. 統計方塊
   const totalCount = filtered.length;
@@ -707,11 +1136,13 @@ function renderDashboard() {
     if (rec) {
       submittedCount++;
       const info = computeScoreInfo(rec);
+      const supTag = isSupportRecord(rec) ? `<div><span class="seat-ver-tag">[支持版]</span></div>` : "";
       seatsHtml += `
         <div class="seat-box submitted">
           <div class="seat-num">${seatPad} 號 ✅</div>
           <div class="seat-score">${info.finalPct} 分</div>
           <div class="seat-name" style="color:${info.bonus > 0 ? '#1d4ed8' : '#15803d'};">${info.shortTag}</div>
+          ${supTag}
         </div>
       `;
     } else {
@@ -727,50 +1158,40 @@ function renderDashboard() {
   document.getElementById("seats-board").innerHTML = seatsHtml;
   document.getElementById("seat-status-text").textContent = `已繳交：${submittedCount} / 29 人（繳交率 ${Math.round((submittedCount/29)*100)}%）`;
 
-  // 3. 各題答對率分析
-  const examInfo = EXAM_KEYS[selectedExam];
+  // 3. 各題答對率分析（一般版與支持版嚴格分開統計，不混算）
+  const regExamInfo = EXAM_KEYS[selectedExam];
+  const supExamInfo = SUPPORT_EXAM_KEYS[selectedExam];
+  const mainTitleEl = document.getElementById("item-analysis-title");
   const tbodyItem = document.getElementById("tbody-item-analysis");
+  const supWrap = document.getElementById("support-item-analysis-wrap");
+  const supTitleEl = document.getElementById("support-item-analysis-title");
+  const tbodySupItem = document.getElementById("tbody-support-item-analysis");
 
-  if (!examInfo) {
-    tbodyItem.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#64748b;padding:24px;">請於上方選單指定單一試卷，以查看該卷各題答對率分析</td></tr>`;
-  } else if (filtered.length === 0) {
-    tbodyItem.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#64748b;padding:24px;">目前尚無作答數據</td></tr>`;
+  const regularRows = filtered.filter(r => !isSupportRecord(r));
+  const supportRows = filtered.filter(r => isSupportRecord(r));
+
+  if (!selectedExam || (!regExamInfo && !supExamInfo)) {
+    mainTitleEl.textContent = "📊 各題首次作答答對率分析（依答對率由低到高排列，掌握教學盲點）";
+    renderItemAnalysisRows(tbodyItem, null, []);
+    supWrap.style.display = "none";
+  } else if (selectedVersion === "support") {
+    mainTitleEl.textContent = `🧩 支持版各題首次作答答對率分析（共 ${supportRows.length} 筆，${supExamInfo ? supExamInfo.total : 0} 題）`;
+    renderItemAnalysisRows(tbodyItem, supExamInfo, supportRows);
+    supWrap.style.display = "none";
+  } else if (selectedVersion === "regular") {
+    mainTitleEl.textContent = `📊 一般版各題首次作答答對率分析（共 ${regularRows.length} 筆，${regExamInfo ? regExamInfo.total : 0} 題）`;
+    renderItemAnalysisRows(tbodyItem, regExamInfo, regularRows);
+    supWrap.style.display = "none";
   } else {
-    const itemStats = examInfo.answers.map((key, i) => {
-      const dist = [0, 0, 0, 0, 0]; // [未答, ①, ②, ③, ④]
-      filtered.forEach(r => {
-        const studentAns = (r.answers && r.answers[i] !== undefined) ? r.answers[i] : 0;
-        dist[studentAns]++;
-      });
-      const correctCount = dist[key];
-      const rate = Math.round((correctCount / filtered.length) * 100);
-      const wrongCount = filtered.length - correctCount;
-      return { qNum: i + 1, key, rate, wrongCount, dist };
-    });
-
-    // 依答對率由低到高排列
-    itemStats.sort((a, b) => a.rate - b.rate);
-
-    tbodyItem.innerHTML = itemStats.map(item => {
-      const barClass = (item.rate >= 75) ? "bar-high" : (item.rate >= 50) ? "bar-mid" : "bar-low";
-      const circKey = ["①", "②", "③", "④"][item.key - 1] || item.key;
-      return `
-        <tr>
-          <td><b style="font-size:1.25rem;color:#1e3a8a;">第 ${item.qNum} 題</b></td>
-          <td><b style="font-size:1.25rem;color:#15803d;">${circKey}</b></td>
-          <td><b style="font-size:1.2rem;">${item.rate}%</b></td>
-          <td>
-            <div class="bar-container">
-              <div class="bar-inner ${barClass}" style="width:${item.rate}%;"></div>
-            </div>
-          </td>
-          <td><b style="color:${item.wrongCount > 0 ? '#dc2626' : '#64748b'};">${item.wrongCount} 人</b></td>
-          <td style="color:#475569;">
-            ${item.dist[1]} / ${item.dist[2]} / ${item.dist[3]} / ${item.dist[4]} ／ 未答 ${item.dist[0]}
-          </td>
-        </tr>
-      `;
-    }).join("");
+    mainTitleEl.textContent = `📊 一般版各題首次作答答對率分析（共 ${regularRows.length} 筆，${regExamInfo ? regExamInfo.total : 0} 題，與支持版分開統計）`;
+    renderItemAnalysisRows(tbodyItem, regExamInfo, regularRows);
+    if (supExamInfo && supportRows.length > 0) {
+      supWrap.style.display = "block";
+      supTitleEl.textContent = `🧩 支持版各題首次作答答對率分析（共 ${supportRows.length} 筆，${supExamInfo.total} 題）`;
+      renderItemAnalysisRows(tbodySupItem, supExamInfo, supportRows);
+    } else {
+      supWrap.style.display = "none";
+    }
   }
 
   // 4. 學生詳細作答清單
@@ -780,29 +1201,32 @@ function renderDashboard() {
     tbodyStudent.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#64748b;padding:24px;">目前無符合條件的學生作答資料</td></tr>`;
   } else {
     tbodyStudent.innerHTML = filtered.map(r => {
-      const eInfo = EXAM_KEYS[r.exam_id];
+      const eInfo = getExamKeyForRecord(r);
       const info = computeScoreInfo(r);
+      const isSup = isSupportRecord(r);
 
-      // 計算原始錯題題號
+      // 計算原始錯題題號（依該筆紀錄所屬版本題解計算）
       let wrongQs = [];
-      if (eInfo && r.answers) {
+      if (eInfo && Array.isArray(r.answers)) {
         eInfo.answers.forEach((ansKey, idx) => {
-          if (r.answers[idx] !== ansKey) wrongQs.push(idx + 1);
+          if (Number(r.answers[idx]) !== ansKey) wrongQs.push(idx + 1);
         });
       }
 
       const dateStr = new Date(r.created_at).toLocaleString("zh-TW", { hour12: false });
+      const verBadge = isSup ? `<span class="pill-support">[支持版]</span>` : "";
       return `
         <tr>
           <td style="color:#64748b;font-size:1rem;">${dateStr}</td>
-          <td><b>${eInfo ? eInfo.name : r.exam_id}</b></td>
+          <td><b>${eInfo ? eInfo.name : r.exam_id}</b>${verBadge}</td>
           <td>${r.class}</td>
           <td><b>${r.seat} 號</b></td>
           <td>${info.rawPct} 分 <span style="color:#64748b;font-size:0.95rem;">(${r.score}/${r.total})</span></td>
           <td><span class="pill-status ${info.statusClass}">${info.statusText}</span></td>
           <td><b style="color:${info.finalPct >= 80 ? '#15803d' : info.finalPct >= 60 ? '#d97706' : '#dc2626'};font-size:1.25rem;">${info.finalPct} 分</b></td>
           <td><span style="color:#dc2626;font-weight:800;">${wrongQs.length ? wrongQs.map(n => `第${n}題`).join('、') : '全對 💯'}</span></td>
-          <td>
+          <td style="white-space:nowrap;">
+            <button class="badge-detail" onclick="openDetailModal(${r.id})">🔍 明細</button>
             <button class="badge-del" onclick="deleteRow(${r.id})">刪除</button>
           </td>
         </tr>
@@ -814,11 +1238,347 @@ function renderDashboard() {
 function getFilteredSubmissions() {
   const selectedExam = document.getElementById("sel-exam").value;
   const selectedClass = document.getElementById("sel-class").value;
+  const selectedVersion = document.getElementById("sel-version") ? document.getElementById("sel-version").value : "";
   return allSubmissions.filter(r => {
     if (selectedExam && r.exam_id !== selectedExam) return false;
     if (selectedClass && r.class !== selectedClass) return false;
+    if (selectedVersion === "support" && !isSupportRecord(r)) return false;
+    if (selectedVersion === "regular" && isSupportRecord(r)) return false;
     return true;
   });
+}
+
+// 檢視單筆學生逐題明細（自動對應一般版或支持版題目與選項）
+function openDetailModal(id) {
+  const r = allSubmissions.find(x => x.id === id);
+  if (!r) return;
+  const isSup = isSupportRecord(r);
+  const eInfo = getExamKeyForRecord(r);
+  const info = computeScoreInfo(r);
+  const circ = ["未答", "①", "②", "③", "④"];
+
+  document.getElementById("detail-modal-title").innerHTML =
+    `${r.class} 班 ${r.seat} 號 — ${eInfo ? eInfo.name : r.exam_id}${isSup ? '<span class="pill-support">[支持版]</span>' : ''}（最終 ${info.finalPct} 分）`;
+
+  const bodyEl = document.getElementById("detail-modal-body");
+  if (!eInfo) {
+    bodyEl.innerHTML = `<p style="color:#64748b;font-weight:700;">此試卷尚未內建題目對照表。原始作答：${JSON.stringify(r.answers || [])}</p>`;
+  } else {
+    const rowsHtml = eInfo.answers.map((ansKey, idx) => {
+      const origAns = Array.isArray(r.answers) ? Number(r.answers[idx] || 0) : 0;
+      const retryAns = Array.isArray(r.retry_answers) ? Number(r.retry_answers[idx] || 0) : 0;
+      const isOrigOk = (origAns === ansKey);
+      const isRetryOk = (retryAns === ansKey);
+      const stem = (eInfo.stems && eInfo.stems[idx]) ? eInfo.stems[idx] : `第 ${idx + 1} 題`;
+      const opts = (eInfo.optionsList && eInfo.optionsList[idx]) ? eInfo.optionsList[idx] : null;
+      const fmtOpt = (val) => {
+        if (!val) return "未答";
+        const label = circ[val] || String(val);
+        return (opts && opts[val - 1]) ? `${label} ${escapeHtml(opts[val - 1])}` : label;
+      };
+      let retryLine = "";
+      if (!isOrigOk && retryAns > 0) {
+        retryLine = `<div style="margin-top:4px;font-weight:800;color:${isRetryOk ? '#1d4ed8' : '#dc2626'};">錯題訂正：${fmtOpt(retryAns)} ${isRetryOk ? '✅ 訂正答對' : '❌ 訂正仍誤'}</div>`;
+      }
+      return `
+        <div class="detail-q-row ${isOrigOk ? 'ok' : 'bad'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <b>第 ${idx + 1} 題：${escapeHtml(stem)}</b>
+            <span style="font-weight:900;color:${isOrigOk ? '#15803d' : '#dc2626'};">${isOrigOk ? '✅ 答對' : '❌ 答錯'}</span>
+          </div>
+          <div style="margin-top:6px;color:#334155;font-size:1rem;">
+            學生作答：<b>${fmtOpt(origAns)}</b> ｜ 正確答案：<b style="color:#15803d;">${fmtOpt(ansKey)}</b>
+          </div>
+          ${retryLine}
+        </div>
+      `;
+    }).join("");
+    bodyEl.innerHTML = `
+      <div style="margin-bottom:14px;color:#475569;font-weight:700;">
+        原始得分：${info.rawPct} 分 (${r.score}/${r.total}) ｜ 錯題訂正：${info.statusText} ｜ 交卷時間：${new Date(r.created_at).toLocaleString("zh-TW", { hour12: false })}
+      </div>
+      ${rowsHtml}
+    `;
+  }
+  document.getElementById("detail-modal").style.display = "flex";
+}
+
+function closeDetailModal() {
+  document.getElementById("detail-modal").style.display = "none";
+}
+
+// ==================== 差異化名單管理（與數學測驗站共用 support_roster） ====================
+function initSupportSeatSelect() {
+  const sel = document.getElementById("sup-add-seat");
+  if (!sel || sel.options.length > 0) return;
+  for (let i = 1; i <= 29; i++) {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = `${i < 10 ? "0" + i : i} 號`;
+    sel.appendChild(opt);
+  }
+}
+
+function toggleSupportManager(forceState) {
+  const panel = document.getElementById("panel-support-manager");
+  if (!panel) return;
+  const nextShow = (typeof forceState === "boolean") ? forceState : (panel.style.display === "none");
+  panel.style.display = nextShow ? "block" : "none";
+  if (nextShow) {
+    initSupportSeatSelect();
+    if (!supportTokensDraft.length && supportCloudMode === "unknown") {
+      loadSupportRosterForTeacher(false);
+    } else {
+      renderSupportRosterUI();
+    }
+  }
+}
+
+function loadLocalSupportMemo() {
+  try {
+    const raw = localStorage.getItem(SUPPORT_MEMO_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalSupportMemo(list) {
+  try {
+    localStorage.setItem(SUPPORT_MEMO_KEY, JSON.stringify(list));
+  } catch {}
+}
+
+function resolveSeatFromToken(token) {
+  const norm = String(token || "").trim().toLowerCase();
+  if (!norm) return null;
+  const memos = loadLocalSupportMemo();
+  const memoHit = memos.find(m => String(m.token || "").toLowerCase() === norm);
+  if (memoHit) return { cls: memoHit.cls, seat: Number(memoHit.seat) };
+
+  // 僅於教師登入後在本機記憶體反查班級座號以利辨識，絕不上傳明文至雲端
+  const classes = ["4-2", "4-1", "4-3"];
+  for (const cls of classes) {
+    for (let seat = 1; seat <= 29; seat++) {
+      if (supportSeatToken(cls, seat) === norm) {
+        return { cls: canonicalSupportClass(cls), seat };
+      }
+    }
+  }
+  return null;
+}
+
+async function loadSupportRosterForTeacher(showAlertOnDone = false) {
+  const statusEl = document.getElementById("support-mgr-status");
+  if (statusEl) {
+    statusEl.className = "support-status-bar";
+    statusEl.textContent = "⏳ 正在讀取共用名單...";
+  }
+
+  let loadedFromCloud = false;
+  let tokens = [];
+  try {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/support_roster?select=token`, {
+      method: "GET",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
+      }
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        loadedFromCloud = true;
+        tokens = rows.map(r => String(r && r.token || "").trim().toLowerCase()).filter(Boolean);
+      }
+    }
+  } catch {
+    loadedFromCloud = false;
+  }
+
+  if (loadedFromCloud) {
+    supportCloudMode = "cloud";
+    supportTokensDraft = Array.from(new Set(tokens.length ? tokens : DEFAULT_SUPPORT_TOKENS));
+    if (statusEl) {
+      statusEl.className = "support-status-bar ok";
+      statusEl.textContent = tokens.length
+        ? `☁️ 已連線至共用雲端名單（目前雲端共 ${tokens.length} 筆，數學／國語同步生效）`
+        : "☁️ 已連線至雲端 support_roster（目前尚無自訂紀錄，顯示預設內建名單；按下儲存即可寫入雲端）";
+    }
+  } else {
+    supportCloudMode = "local";
+    try {
+      const raw = localStorage.getItem(SUPPORT_STORAGE_KEY);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        tokens = Array.isArray(parsed) ? parsed.map(t => String(t || "").trim().toLowerCase()).filter(Boolean) : [];
+      } else {
+        tokens = [...DEFAULT_SUPPORT_TOKENS];
+      }
+    } catch {
+      tokens = [...DEFAULT_SUPPORT_TOKENS];
+    }
+    supportTokensDraft = Array.from(new Set(tokens));
+    if (statusEl) {
+      statusEl.className = "support-status-bar warn";
+      statusEl.textContent = "💻 本機模式（尚未在 Supabase 建立 support_roster 表；系統已內建預設 Token 並支援本機設定，執行 math-quiz/supabase_support_config.sql 後即可跨裝置雲端同步）";
+    }
+  }
+
+  renderSupportRosterUI();
+  if (showAlertOnDone) {
+    alert(loadedFromCloud ? "已重新讀取雲端共用名單！" : "已重新讀取本機名單（尚未偵測到雲端 support_roster 表）。");
+  }
+}
+
+function renderSupportRosterUI() {
+  const listEl = document.getElementById("support-roster-list");
+  if (!listEl) return;
+  if (!supportTokensDraft.length) {
+    listEl.innerHTML = `<div style="color:#64748b;font-weight:700;padding:12px;background:#fff;border-radius:10px;border:1.5px dashed #cbd5e1;">目前名單為空，請從上方選擇班級與座號加入。</div>`;
+    return;
+  }
+
+  listEl.innerHTML = supportTokensDraft.map(token => {
+    const resolved = resolveSeatFromToken(token);
+    const label = resolved
+      ? `<b>${resolved.cls} 班 ${resolved.seat < 10 ? "0" + resolved.seat : resolved.seat} 號</b>`
+      : `<b>匿名 Token</b>`;
+    return `
+      <div class="support-roster-item">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span>${label}</span>
+          <span class="token-code">${escapeHtml(token)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button class="badge-detail" onclick="copySeatSupportLink('${escapeHtml(token)}')">🔗 複製專屬連結</button>
+          <button class="badge-del" onclick="removeSupportToken('${escapeHtml(token)}')">移除</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function addSupportSeat() {
+  const cls = document.getElementById("sup-add-class").value;
+  const seat = parseInt(document.getElementById("sup-add-seat").value, 10);
+  const token = supportSeatToken(cls, seat);
+  if (!token) return;
+
+  if (!supportTokensDraft.includes(token)) {
+    supportTokensDraft.push(token);
+  }
+  const memos = loadLocalSupportMemo().filter(m => String(m.token || "").toLowerCase() !== token);
+  memos.push({ cls: canonicalSupportClass(cls), seat, token });
+  saveLocalSupportMemo(memos);
+  try {
+    localStorage.setItem(SUPPORT_STORAGE_KEY, JSON.stringify(supportTokensDraft));
+  } catch {}
+  renderSupportRosterUI();
+}
+
+function removeSupportToken(token) {
+  const norm = String(token || "").trim().toLowerCase();
+  supportTokensDraft = supportTokensDraft.filter(t => t !== norm);
+  try {
+    localStorage.setItem(SUPPORT_STORAGE_KEY, JSON.stringify(supportTokensDraft));
+  } catch {}
+  renderSupportRosterUI();
+}
+
+async function saveSupportRosterToCloud() {
+  const btn = document.getElementById("btn-save-support-cloud");
+  const statusEl = document.getElementById("support-mgr-status");
+  try {
+    localStorage.setItem(SUPPORT_STORAGE_KEY, JSON.stringify(supportTokensDraft));
+  } catch {}
+
+  if (!currentPw) {
+    alert("請先登入教師管理後台！");
+    return;
+  }
+
+  const prevTxt = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "⏳ 同步中...";
+
+  try {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/teacher_set_support_tokens`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        pw: currentPw,
+        p_tokens: supportTokensDraft
+      })
+    });
+
+    if (res.ok) {
+      supportCloudMode = "cloud";
+      if (statusEl) {
+        statusEl.className = "support-status-bar ok";
+        statusEl.textContent = `☁️ 已同步 ${supportTokensDraft.length} 筆匿名 Token 至雲端 support_roster（國語／數學雙站即時跨裝置生效）`;
+      }
+      alert(`✅ 已成功儲存並同步 ${supportTokensDraft.length} 筆匿名名單至雲端！\n國語與數學隨堂測驗皆會自動套用。`);
+    } else if (res.status === 404) {
+      supportCloudMode = "local";
+      if (statusEl) {
+        statusEl.className = "support-status-bar warn";
+        statusEl.textContent = `💻 已儲存於本機（共 ${supportTokensDraft.length} 筆）。尚未執行 math-quiz/supabase_support_config.sql，故尚未同步至雲端。`;
+      }
+      alert("已儲存於本機瀏覽器立即生效！\n\n提醒：雲端尚未建立 teacher_set_support_tokens RPC。若需跨裝置同步修改名單，請在 Supabase SQL Editor 執行一次 math-quiz/supabase_support_config.sql，或使用「複製 Token 備援陣列」。");
+    } else {
+      const errTxt = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errTxt}`);
+    }
+  } catch (err) {
+    alert(`已儲存於本機，但雲端同步失敗：${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prevTxt;
+  }
+}
+
+function getStudentIndexUrl(query = "") {
+  try {
+    const u = new URL("index.html", window.location.href);
+    if (query) u.search = query;
+    return u.toString();
+  } catch {
+    return `index.html${query}`;
+  }
+}
+
+function openSupportPreview() {
+  window.open(getStudentIndexUrl("?s=preview"), "_blank", "noopener");
+}
+
+async function copyTextToClipboard(text, successMsg) {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert(successMsg);
+  } catch {
+    prompt("請手動複製下方內容：", text);
+  }
+}
+
+function copySupportPreviewUrl() {
+  const url = getStudentIndexUrl("?s=preview");
+  copyTextToClipboard(url, `✅ 已複製支持版預覽連結：\n${url}`);
+}
+
+function copySeatSupportLink(token) {
+  const url = getStudentIndexUrl(`?s=${encodeURIComponent(token)}`);
+  copyTextToClipboard(url, `✅ 已複製靜默專屬連結：\n${url}`);
+}
+
+function copySupportTokensSnippet() {
+  const snippet = `const DEFAULT_SUPPORT_TOKENS = ${JSON.stringify(supportTokensDraft)};`;
+  copyTextToClipboard(snippet, `✅ 已複製靜態備援設定：\n${snippet}`);
 }
 
 function formatTaiwanDate(dateInput) {
@@ -939,7 +1699,7 @@ function syncDynamicExamOptions() {
 }
 
 function isClass402(cls) {
-  return String(cls || "").replace(/[^0-9]/g, "") === "402";
+  return canonicalSupportClass(cls) === "402";
 }
 
 function buildAutoSyncNote(r, info) {

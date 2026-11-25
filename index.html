@@ -753,6 +753,188 @@
     font-size: 1.15rem;
     font-weight: 700;
   }
+
+  /* 關鍵詞柔和高亮與語音／提示元件（純視覺輔助，無標籤文字） */
+  .kw-highlight {
+    background: #fef08a;
+    color: #713f12;
+    font-weight: 900;
+    padding: 1px 7px;
+    border-radius: 8px;
+    box-shadow: inset 0 -2px 0 rgba(217, 119, 6, 0.35);
+  }
+
+  .auto-read-toggle {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: calc(1.1rem * var(--font-scale));
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+  .auto-read-toggle:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+  .auto-read-toggle.active {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fbbf24;
+  }
+
+  .support-tts-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .tts-btn {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 2.5px solid #3b82f6;
+    border-radius: 16px;
+    padding: 12px 22px;
+    font-size: calc(1.35rem * var(--font-scale));
+    font-weight: 900;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.12);
+  }
+  .tts-btn:hover {
+    background: #dbeafe;
+    transform: translateY(-1px);
+  }
+  .tts-btn.speaking {
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1e3a8a;
+  }
+
+  .support-hint-box {
+    background: #fffbeb;
+    border: 2.5px solid #fcd34d;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: calc(1.4rem * var(--font-scale));
+    font-weight: 700;
+    color: #78350f;
+    line-height: 1.65;
+  }
+  .support-hint-text {
+    flex: 1;
+  }
+  .tts-mini-btn {
+    flex-shrink: 0;
+    background: #ffffff;
+    color: #1e40af;
+    border: 2px solid #93c5fd;
+    border-radius: 12px;
+    min-width: 48px;
+    height: 48px;
+    padding: 0 12px;
+    font-size: calc(1.25rem * var(--font-scale));
+    font-weight: 900;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .tts-mini-btn:hover {
+    background: #dbeafe;
+    border-color: #2563eb;
+  }
+  .tts-mini-btn.speaking {
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1e3a8a;
+  }
+
+  .option-row-wrap {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .option-row-wrap .option-btn {
+    flex: 1;
+  }
+  .option-row-wrap .tts-opt-btn {
+    flex-shrink: 0;
+    width: 64px;
+    min-height: 76px;
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 3px solid #7dd3fc;
+    border-radius: 18px;
+    font-size: calc(1.5rem * var(--font-scale));
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .option-row-wrap .tts-opt-btn:hover {
+    background: #e0f2fe;
+    border-color: #0284c7;
+  }
+  .option-row-wrap .tts-opt-btn.speaking {
+    background: #0284c7;
+    color: #fff;
+    border-color: #0369a1;
+  }
+
+  /* 閱讀舒適排版微調 */
+  body.support-mode .stage-card {
+    padding: 36px 40px;
+  }
+  body.support-mode .question-stem {
+    font-size: calc(2.55rem * var(--font-scale));
+    line-height: 1.75;
+    letter-spacing: 0.8px;
+    margin-bottom: 22px;
+  }
+  body.support-mode .options-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  body.support-mode .option-btn {
+    min-height: 86px;
+    padding: 22px 26px;
+    font-size: calc(2.15rem * var(--font-scale));
+    line-height: 1.55;
+  }
+  body.support-mode .q-dot {
+    height: 54px;
+    font-size: calc(1.35rem * var(--font-scale));
+  }
+  @media (max-width: 640px) {
+    body.support-mode .stage-card {
+      padding: 24px 20px;
+    }
+    body.support-mode .question-stem {
+      font-size: calc(2rem * var(--font-scale));
+    }
+    body.support-mode .option-btn {
+      font-size: calc(1.75rem * var(--font-scale));
+      padding: 18px 18px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -863,15 +1045,22 @@
         <span class="exam-student-badge" id="exam-badge-info">4-2 班 01 號</span>
         <span style="font-size:calc(1.4rem * var(--font-scale));font-weight:900;" id="exam-test-lesson-title">第七課 線上隨堂測驗</span>
       </div>
-      <div class="exam-progress-text" id="exam-progress-text">已作答 0 / 15 題</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button type="button" id="btn-auto-read-toggle" class="auto-read-toggle active" style="display:none;" onclick="toggleAutoRead()">🔊 自動朗讀：開</button>
+        <div class="exam-progress-text" id="exam-progress-text">已作答 0 / 15 題</div>
+      </div>
     </div>
 
     <!-- 題號快選列 -->
     <div class="q-dots" id="exam-q-dots"></div>
 
     <div class="stage-card">
-      <div id="exam-section-pill" style="display:inline-block;background:#fef3c7;color:#92400e;padding:4px 14px;border-radius:999px;font-weight:800;font-size:1.15rem;margin-bottom:14px;"></div>
+      <div class="support-tts-bar" id="exam-header-row">
+        <div id="exam-section-pill" style="display:inline-block;background:#fef3c7;color:#92400e;padding:4px 14px;border-radius:999px;font-weight:800;font-size:1.15rem;"></div>
+        <button type="button" id="btn-exam-read-q" class="tts-btn" style="display:none;" onclick="speakCurrentExamQuestion()">🔊 念題目</button>
+      </div>
       <div class="question-stem" id="exam-stem"></div>
+      <div id="exam-hint-box" class="support-hint-box" style="display:none;"></div>
       <div class="options-grid" id="exam-options"></div>
     </div>
 
@@ -1107,6 +1296,72 @@ const LESSONS = [
         explanation: "「深思熟慮」與「不假思索」語意矛盾，既然花了三天三夜深思熟慮就不是不假思索，因此用法最不恰當。",
         singleCol: true
       }
+    ],
+    supportQuestions: [
+      {
+        section: "一、形近字練習",
+        stem: "弟弟很愛玩，非常（　）氣。\n括號裡應該填哪一個字？",
+        hint: "「淘」是**水部**，形容小朋友愛玩；「陶」是阜部，用來做杯子和碗。",
+        options: ["淘", "陶"],
+        answer: 0,
+        explanation: "形容小朋友很頑皮，要用**水部**的「淘氣」。"
+      },
+      {
+        section: "一、形近字練習",
+        stem: "我們坐船去小島，搭的是（　）輪。\n括號裡應該填哪一個字？",
+        hint: "坐船會經過**水**面，所以要選有「**水部（氵）**」的字。",
+        options: ["度", "渡"],
+        answer: 1,
+        explanation: "「渡輪」是在水上開的船，所以用有水部的「渡」。"
+      },
+      {
+        section: "一、形近字練習",
+        stem: "班長很負責，都會（　）動幫忙同學。\n括號裡應該填哪一個字？",
+        hint: "「自」代表**自己**；「目」代表**眼睛**。自己主動幫忙，要選哪一個？",
+        options: ["目", "自"],
+        answer: 1,
+        explanation: "自己主動去幫忙，叫做「自動」，所以要填「自」。"
+      },
+      {
+        section: "二、詞語意思",
+        stem: "「他住在小小的**斗室**裡。」\n句中的「**斗**」是什麼意思？",
+        hint: "前面已經寫了「小小的」，所以「斗室」是指很小的房間喔！",
+        options: ["形容很大", "一種食物", "形容很小"],
+        answer: 2,
+        explanation: "「斗室」形容房間很狹小，所以「斗」的意思是「形容很小」。"
+      },
+      {
+        section: "二、詞語意思",
+        stem: "「這場運動非常**劇烈**，大家都很累。」\n句中的「**劇**」是什麼意思？",
+        hint: "做完運動「非常累」，表示運動的強度很強、很猛烈。",
+        options: ["很輕鬆", "十分、非常猛烈", "慢慢的"],
+        answer: 1,
+        explanation: "「劇烈」的「劇」是指「十分、非常猛烈」。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "哥哥**看書非常快**，一下就看完一頁。\n可以用哪一個成語形容？",
+        hint: "一眼就能看十行字，表示看書的速度非常快！",
+        options: ["弱不禁風", "樂而忘返", "一目十行"],
+        answer: 2,
+        explanation: "「一目十行」形容看書的速度非常快。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "校外教學好好玩，大家都玩到**忘了回家**。\n可以用哪一個成語形容？",
+        hint: "「樂」是快樂，「忘返」是忘記回家。",
+        options: ["不假思索", "弱不禁風", "樂而忘返"],
+        answer: 2,
+        explanation: "「樂而忘返」形容玩得太開心，連回家都忘了。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "小華身體**很瘦弱**，吹一點風就容易感冒。\n可以用哪一個成語形容？",
+        hint: "「弱」是瘦弱，「禁」是承受。連風都吹不起，表示身體很弱。",
+        options: ["弱不禁風", "一目十行", "樂而忘返"],
+        answer: 0,
+        explanation: "「弱不禁風」形容人身體非常瘦弱。"
+      }
     ]
   },
   {
@@ -1334,6 +1589,88 @@ const LESSONS = [
         explanation: "「千里鵝毛」比喻禮物雖輕但情意深重，與句中「非常昂貴的新腳踏車」語意矛盾，因此用法最不恰當。",
         singleCol: true
       }
+    ],
+    supportQuestions: [
+      {
+        section: "一、形近字練習",
+        stem: "我們爬上高高的**山（　）**看風景。\n括號裡應該填哪一個字？",
+        hint: "山上有泥土，所以要選「**土部**」的字；「水部」跟海浪有關。",
+        options: ["坡", "波"],
+        answer: 0,
+        explanation: "「山坡」跟土地有關，所以用土部的「坡」。"
+      },
+      {
+        section: "一、形近字練習",
+        stem: "天氣變冷了，媽媽幫我**（　）上外套**。\n括號裡應該填哪一個字？",
+        hint: "穿衣服、蓋外套要用**手**，所以要選「**手部（扌）**」的字。",
+        options: ["玻", "披"],
+        answer: 1,
+        explanation: "「披上外套」是手的動作，所以用手部的「披」。"
+      },
+      {
+        section: "一、形近字練習",
+        stem: "妹妹頭上綁著兩條可愛的**髮（　）**。\n括號裡應該填哪一個字？",
+        hint: "頭髮一根一根的，像絲線一樣，要選中間有「**糸（絲線）**」的字。",
+        options: ["辦", "辮"],
+        answer: 1,
+        explanation: "「髮辮」跟細絲般的頭髮有關，中間是「糸」部。"
+      },
+      {
+        section: "一、形近字練習",
+        stem: "奶奶把老照片放進木頭**相（　）**裡。\n括號裡應該填哪一個字？",
+        hint: "照片的框框常用木頭做的，要選「**木部**」的字；「目部」跟眼睛有關。",
+        options: ["框", "眶"],
+        answer: 0,
+        explanation: "「相框」用木頭或硬物製成，所以是木部的「框」。"
+      },
+      {
+        section: "二、詞語意思",
+        stem: "「我**這陣子**功課很多，沒空去玩。」\n「**這陣子**」是指什麼意思？",
+        hint: "想想看，功課很多是最近「這一段時間」的事喔！",
+        options: ["一個地方", "一小段時間", "一種天氣"],
+        answer: 1,
+        explanation: "「這陣子」的「陣」表示一小段時間。"
+      },
+      {
+        section: "二、詞語意思",
+        stem: "「爺爺的想法很**古板**，只用老方法。」\n句中的「**板**」是什麼意思？",
+        hint: "只堅持用老方法，表示想法「不靈活、不會變通」。",
+        options: ["很新潮好玩", "一塊木頭", "不靈活、固執不知變通"],
+        answer: 2,
+        explanation: "「古板」的「板」指不靈活、固執不知變通。"
+      },
+      {
+        section: "二、詞語意思",
+        stem: "「有人落水，哥哥**挺身而出**去救人。」\n「**挺身而出**」是什麼樣子？",
+        hint: "哥哥跳下去救人，表示他非常「勇敢站出來」。",
+        options: ["勇敢站出來、不害怕", "嚇得躲起來", "慢慢走開"],
+        answer: 0,
+        explanation: "「挺身而出」形容勇敢出面、不怕困難。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "半夜跑出一隻大老鼠，弟弟被**嚇得非常害怕**。\n可以用哪一個成語形容？",
+        hint: "好像靈魂都嚇飛了，就是非常害怕的意思！",
+        options: ["乘風破浪", "魂飛魄散", "千里鵝毛"],
+        answer: 1,
+        explanation: "「魂飛魄散」形容非常恐懼、害怕。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "偵探拿放大鏡找尋**細微的線索**。\n可以用哪一個成語形容？",
+        hint: "像蜘蛛絲和馬蹄印一樣小小的痕跡，就是線索喔！",
+        options: ["披荊斬棘", "魂飛魄散", "蛛絲馬跡"],
+        answer: 2,
+        explanation: "「蛛絲馬跡」指可以拿來查案的細微線索。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "大船在海上**勇敢衝破大浪**，一路向前。\n可以用哪一個成語形容？",
+        hint: "「乘風」是搭著風，「破浪」是衝破海浪。",
+        options: ["乘風破浪", "千里鵝毛", "蛛絲馬跡"],
+        answer: 0,
+        explanation: "「乘風破浪」形容船乘著風衝破巨浪，也比喻不怕困難往前衝。"
+      }
     ]
   },
   {
@@ -1497,6 +1834,65 @@ const LESSONS = [
         explanation: "「餘音繞梁」形容歌聲或音樂美妙感人，餘味不絕，與句中「五音不全又刺耳」語意矛盾，因此用法最不恰當。",
         singleCol: true
       }
+    ],
+    supportQuestions: [
+      {
+        section: "一、形近字練習",
+        stem: "弟弟跑完步，口（　）得想找水喝。\n括號裡應該填哪一個字？",
+        hint: "口渴是因為身體缺**水**，所以要選「**水部（氵）**」的字。",
+        options: ["喝", "渴"],
+        answer: 1,
+        explanation: "「口渴」缺水，要用**水部**的「渴」；「喝水」才用口部。"
+      },
+      {
+        section: "一、形近字練習",
+        stem: "昨晚發生了大**地（　）**，房子都在搖晃。\n括號裡應該填哪一個字？",
+        hint: "地震是自然現象，上面有「**雨**」字頭；「手部」的振是鼓起精神。",
+        options: ["震", "振"],
+        answer: 0,
+        explanation: "大地搖動叫做「地震」，要用雨部的「震」。"
+      },
+      {
+        section: "一、形近字練習",
+        stem: "我們把彩帶一圈一圈**（　）在柱子上**。\n括號裡應該填哪一個字？",
+        hint: "彩帶像繩子、絲線一樣，要選「**糸部**」的字；「水部」是澆花。",
+        options: ["澆", "繞"],
+        answer: 1,
+        explanation: "把繩子或彩帶捲起來叫做「繞」，用糸部。"
+      },
+      {
+        section: "二、字音與詞義",
+        stem: "「黃**褐**色的鳥巢藏在樹枝間。」\n「**褐**」字和哪一個字的讀音**相同**？",
+        hint: "「褐」念作二聲（ㄏㄜˊ），念念看哪一個字也是二聲！",
+        options: ["喝（喝茶）", "河（河流）", "賀（慶賀）"],
+        speakOptions: ["喝，喝茶的喝", "河，河流的河", "賀，慶賀的賀"],
+        answer: 1,
+        explanation: "「褐」和「河」都讀作二聲「ㄏㄜˊ」。"
+      },
+      {
+        section: "二、字音與詞義",
+        stem: "「假日去公園，**偶爾**會看見白頭翁。」\n「**偶爾**」是什麼意思？",
+        hint: "不是每天都看到，是有時候、碰巧才會看到喔！",
+        options: ["每天一定會", "永遠不會", "有時候、碰巧"],
+        answer: 2,
+        explanation: "「偶爾」就是有時候、碰巧的意思。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "老闆聽到不合理的要求，**氣得非常生氣**。\n可以用哪一個成語形容？",
+        hint: "「怒」就是生氣，氣到頭髮都豎起來把帽子頂開了！",
+        options: ["怒髮衝冠", "餘音繞梁", "無獨有偶"],
+        answer: 0,
+        explanation: "「怒髮衝冠」形容非常生氣、憤怒。"
+      },
+      {
+        section: "三、成語練習",
+        stem: "歌手的歌聲**非常好聽**，聽完還一直記得。\n可以用哪一個成語形容？",
+        hint: "「餘音」是留下來的聲音，好像一直在屋頂繞來繞去。",
+        options: ["庸人自擾", "怒髮衝冠", "餘音繞梁"],
+        answer: 2,
+        explanation: "「餘音繞梁」形容歌聲或音樂非常美妙好聽。"
+      }
     ]
   },
   { id: "L10", lessonNum: "第十課", title: "第十課隨堂練習", subtitle: "建置中", ready: false, questions: [] },
@@ -1532,7 +1928,9 @@ function renderZhuyinCluster(cluster) {
 }
 
 function formatStemHTML(text) {
-  return text
+  return String(text || "")
+    .replace(/\n/g, "<br>")
+    .replace(/\*\*([^*]+)\*\*/g, '<span class="kw-highlight">$1</span>')
     .replace(/（　）/g, '<span class="highlight-blank">　</span>')
     .replace(/【([^】]+)】/g, '<span class="highlight-quote">【$1】</span>')
     .replace(/([ㄅ-ㄩ]+[ˊˇˋ˙]?)/g, (match) => renderZhuyinCluster(match));
@@ -1540,6 +1938,7 @@ function formatStemHTML(text) {
 
 // 換頁控制器
 function showView(viewId) {
+  stopSpeech();
   document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
   document.getElementById(viewId).classList.add("active");
   document.getElementById("btn-home").style.display = (viewId === "view-home") ? "none" : "inline-flex";
@@ -1547,6 +1946,8 @@ function showView(viewId) {
 }
 
 function goHome() {
+  stopSpeech();
+  setSupportModeUI(false);
   currentLesson = null;
   currentMode = "home";
   showView("view-home");
@@ -1751,6 +2152,302 @@ function renderProjList() {
   container.innerHTML = html;
 }
 
+// ==================== 匿名座號分流與語音朗讀輔助 ====================
+const DEFAULT_SUPPORT_TOKENS = ["29ed3f137502a0b9"];
+const SUPPORT_TOKENS = [...DEFAULT_SUPPORT_TOKENS];
+const SUPPORT_STORAGE_KEY = "chaohe_support_tokens_v1";
+
+let remoteSupportTokens = null; // null: 未載入或表未建立；Array: 雲端回傳結果
+let supportRosterLoaded = false;
+let isSupportMode = false;
+let autoReadEnabled = true;
+let activeSpeakingBtn = null;
+
+function canonicalSupportClass(cls) {
+  const cleaned = String(cls || "").trim().replace(/[^0-9a-zA-Z]/g, "");
+  return cleaned === "42" ? "402" : cleaned;
+}
+
+function supportSeatToken(cls, seat) {
+  const c = canonicalSupportClass(cls);
+  const s = Number(seat);
+  if (!c || !Number.isFinite(s) || s <= 0) return "";
+  const str = `chaohe-support-v1:${c}:${s}`;
+  let h1 = 0x811c9dc5;
+  let h2 = 0x050c5d1f;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 0x01000193);
+    h2 = Math.imul(h2 ^ ch, 0x85ebca6b);
+  }
+  return ((h1 >>> 0).toString(16).padStart(8, "0")) + ((h2 >>> 0).toString(16).padStart(8, "0"));
+}
+
+function getUrlSupportParam() {
+  try {
+    return (new URLSearchParams(window.location.search).get("s") || "").trim().toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function loadLocalSupportTokens() {
+  try {
+    const raw = localStorage.getItem(SUPPORT_STORAGE_KEY);
+    if (raw === null) return null;
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.map(t => String(t || "").trim().toLowerCase()).filter(Boolean) : [];
+  } catch {
+    return null;
+  }
+}
+
+async function loadSupportRoster(force = false) {
+  if (supportRosterLoaded && !force) return remoteSupportTokens;
+  supportRosterLoaded = true;
+  try {
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 3500) : null;
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/support_roster?select=token`, {
+      method: "GET",
+      headers: {
+        "apikey": SUPABASE_CONFIG.ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
+      },
+      ...(controller ? { signal: controller.signal } : {})
+    });
+    if (timer) clearTimeout(timer);
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        remoteSupportTokens = rows.map(r => String(r && r.token || "").trim().toLowerCase()).filter(Boolean);
+        return remoteSupportTokens;
+      }
+    }
+  } catch {
+    // 雲端表尚未建立或離線時安靜降級
+  }
+  remoteSupportTokens = null;
+  return null;
+}
+
+function getEffectiveSupportTokenSet() {
+  if (Array.isArray(remoteSupportTokens) && remoteSupportTokens.length > 0) {
+    return new Set(remoteSupportTokens);
+  }
+  const localTokens = loadLocalSupportTokens();
+  const merged = new Set(SUPPORT_TOKENS.map(t => String(t || "").trim().toLowerCase()).filter(Boolean));
+  if (Array.isArray(localTokens)) {
+    if (localTokens.length > 0) {
+      localTokens.forEach(t => merged.add(t));
+    } else {
+      return new Set();
+    }
+  }
+  return merged;
+}
+
+function isSupportStudent(cls, seat) {
+  const urlParam = getUrlSupportParam();
+  if (urlParam === "preview") return true;
+  const token = supportSeatToken(cls, seat);
+  if (!token) return false;
+  if (urlParam && urlParam === token) return true;
+  const tokenSet = getEffectiveSupportTokenSet();
+  return tokenSet.has(token);
+}
+
+function isSupportSubmission(sub, lesson) {
+  if (!sub) return false;
+  if (String(sub.client_id || "").endsWith("__sup")) return true;
+  if (lesson && Array.isArray(lesson.supportQuestions) && lesson.supportQuestions.length > 0) {
+    if (Number(sub.total) === lesson.supportQuestions.length && Number(sub.total) !== lesson.questions.length) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getActiveQuestions(lesson = currentLesson, useSupport = isSupportMode) {
+  if (!lesson) return [];
+  if (useSupport && Array.isArray(lesson.supportQuestions) && lesson.supportQuestions.length > 0) {
+    return lesson.supportQuestions;
+  }
+  return lesson.questions || [];
+}
+
+function setSupportModeUI(active) {
+  isSupportMode = Boolean(active);
+  document.body.classList.toggle("support-mode", isSupportMode);
+  const autoBtn = document.getElementById("btn-auto-read-toggle");
+  const readQBtn = document.getElementById("btn-exam-read-q");
+  if (autoBtn) {
+    autoBtn.style.display = isSupportMode ? "inline-flex" : "none";
+    updateAutoReadBtnLabel();
+  }
+  if (readQBtn) {
+    readQBtn.style.display = isSupportMode ? "inline-flex" : "none";
+  }
+}
+
+function updateAutoReadBtnLabel() {
+  const autoBtn = document.getElementById("btn-auto-read-toggle");
+  if (!autoBtn) return;
+  autoBtn.classList.toggle("active", autoReadEnabled);
+  autoBtn.textContent = autoReadEnabled ? "🔊 自動朗讀：開" : "🔇 自動朗讀：關";
+}
+
+function toggleAutoRead() {
+  autoReadEnabled = !autoReadEnabled;
+  updateAutoReadBtnLabel();
+  if (!autoReadEnabled) {
+    stopSpeech();
+  } else if (currentMode === "exam" && isSupportMode) {
+    speakCurrentExamQuestion();
+  }
+}
+
+let cachedZhTwVoice = null;
+function getZhTwVoice() {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+  const voices = window.speechSynthesis.getVoices() || [];
+  if (!voices.length) return cachedZhTwVoice;
+  const preferred = voices.find(v => /^zh[-_]TW$/i.test(v.lang) && /meijia|hsiaochen|yating|google|台灣|國語/i.test(v.name))
+    || voices.find(v => /^zh[-_]TW$/i.test(v.lang))
+    || voices.find(v => /^zh/i.test(v.lang));
+  if (preferred) cachedZhTwVoice = preferred;
+  return cachedZhTwVoice;
+}
+
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  window.speechSynthesis.onvoiceschanged = () => { getZhTwVoice(); };
+  window.addEventListener("beforeunload", () => { try { window.speechSynthesis.cancel(); } catch {} });
+}
+
+function stopSpeech() {
+  if (activeSpeakingBtn) {
+    activeSpeakingBtn.classList.remove("speaking");
+    activeSpeakingBtn = null;
+  }
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    try { window.speechSynthesis.cancel(); } catch {}
+  }
+}
+
+function cleanTextForSpeech(text) {
+  return String(text || "")
+    .replace(/\*\*/g, "")
+    .replace(/（　）/g, "空格")
+    .replace(/＿＿＿＿/g, "空格")
+    .replace(/[【】「」『』]/g, " ")
+    .replace(/\(([ㄅ-ㄩˊˇˋ˙]+)\)/g, "")
+    .replace(/（([ㄅ-ㄩˊˇˋ˙]+)）/g, "")
+    .replace(/[ㄅ-ㄩ]+[ˊˇˋ˙]?/g, "")
+    .replace(/\n+/g, "，")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function speakText(text, btnEl = null) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  const cleaned = cleanTextForSpeech(text);
+  if (!cleaned) return;
+  const wasSameBtn = btnEl && activeSpeakingBtn === btnEl && window.speechSynthesis.speaking;
+  stopSpeech();
+  if (wasSameBtn) return;
+
+  try {
+    const utter = new SpeechSynthesisUtterance(cleaned);
+    utter.lang = "zh-TW";
+    utter.rate = 0.85;
+    utter.pitch = 1;
+    const voice = getZhTwVoice();
+    if (voice) utter.voice = voice;
+    if (btnEl) {
+      activeSpeakingBtn = btnEl;
+      btnEl.classList.add("speaking");
+    }
+    const clearState = () => {
+      if (btnEl) btnEl.classList.remove("speaking");
+      if (activeSpeakingBtn === btnEl) activeSpeakingBtn = null;
+    };
+    utter.onend = clearState;
+    utter.onerror = clearState;
+    window.speechSynthesis.speak(utter);
+  } catch (err) {
+    console.warn("語音朗讀失敗:", err);
+  }
+}
+
+function buildQuestionSpeechText(q, qNum) {
+  const numLabels = ["一", "二", "三", "四"];
+  const stemText = cleanTextForSpeech(q.speakStem || q.stem);
+  const optsSpeech = (q.options || []).map((opt, idx) => {
+    const optSpeak = (q.speakOptions && q.speakOptions[idx]) ? q.speakOptions[idx] : opt;
+    return `選項${numLabels[idx] || (idx + 1)}，${cleanTextForSpeech(optSpeak)}`;
+  }).join("。");
+  return `第${qNum}題。${stemText}。${optsSpeech}`;
+}
+
+function speakCurrentExamQuestion(btnEl = null) {
+  const qs = getActiveQuestions();
+  const q = qs[examQIndex];
+  if (!q) return;
+  const targetBtn = btnEl || document.getElementById("btn-exam-read-q");
+  speakText(buildQuestionSpeechText(q, examQIndex + 1), targetBtn);
+}
+
+function speakExamOption(event, optIdx, btnEl) {
+  if (event) event.stopPropagation();
+  const qs = getActiveQuestions();
+  const q = qs[examQIndex];
+  if (!q || !q.options[optIdx]) return;
+  const numLabels = ["一", "二", "三", "四"];
+  const optSpeak = (q.speakOptions && q.speakOptions[optIdx]) ? q.speakOptions[optIdx] : q.options[optIdx];
+  speakText(`選項${numLabels[optIdx] || (optIdx + 1)}，${cleanTextForSpeech(optSpeak)}`, btnEl);
+}
+
+function speakCurrentHint(btnEl) {
+  const qs = getActiveQuestions();
+  const q = qs[examQIndex];
+  if (!q || !q.hint) return;
+  speakText(`小提示。${cleanTextForSpeech(q.hint)}`, btnEl);
+}
+
+function speakRetryQuestion(qIdx, btnEl) {
+  const qs = getActiveQuestions();
+  const q = qs[qIdx];
+  if (!q) return;
+  speakText(buildQuestionSpeechText(q, qIdx + 1), btnEl);
+}
+
+function speakRetryOption(event, qIdx, optIdx, btnEl) {
+  if (event) event.stopPropagation();
+  const qs = getActiveQuestions();
+  const q = qs[qIdx];
+  if (!q || !q.options[optIdx]) return;
+  const numLabels = ["一", "二", "三", "四"];
+  const optSpeak = (q.speakOptions && q.speakOptions[optIdx]) ? q.speakOptions[optIdx] : q.options[optIdx];
+  speakText(`選項${numLabels[optIdx] || (optIdx + 1)}，${cleanTextForSpeech(optSpeak)}`, btnEl);
+}
+
+function speakRetryHint(qIdx, btnEl) {
+  const qs = getActiveQuestions();
+  const q = qs[qIdx];
+  if (!q || !q.hint) return;
+  speakText(`小提示。${cleanTextForSpeech(q.hint)}`, btnEl);
+}
+
+function speakCorrectionItem(qIdx, btnEl) {
+  const qs = getActiveQuestions();
+  const q = qs[qIdx];
+  if (!q) return;
+  const numLabels = ["一", "二", "三", "四"];
+  const ansText = (q.speakOptions && q.speakOptions[q.answer]) ? q.speakOptions[q.answer] : q.options[q.answer];
+  const full = `第${qIdx + 1}題。${cleanTextForSpeech(q.speakStem || q.stem)}。正確答案是選項${numLabels[q.answer] || (q.answer + 1)}，${cleanTextForSpeech(ansText)}。${cleanTextForSpeech(q.explanation)}`;
+  speakText(full, btnEl);
+}
+
 // ==================== 模式二：學生線上測驗（每日限一次 + 錯題訂正補回原題分數） ====================
 let currentStudent = { class: "4-2", seat: 1 };
 let examQIndex = 0;
@@ -1829,12 +2526,13 @@ function calcRetryBonus(origCorrect, retryCorrectCount, total) {
 }
 
 function getRetryProgressCounts(sub, lesson) {
-  if (!sub || !sub.retry_answers || !lesson || !Array.isArray(lesson.questions)) {
+  const qs = getActiveQuestions(lesson, isSupportSubmission(sub, lesson));
+  if (!sub || !sub.retry_answers || !Array.isArray(qs) || !qs.length) {
     return { fixedCount: null, wrongCount: sub ? Math.max(0, Number(sub.total || 0) - Number(sub.score || 0)) : 0 };
   }
   let wrongCount = 0;
   let fixedCount = 0;
-  lesson.questions.forEach((q, idx) => {
+  qs.forEach((q, idx) => {
     const origVal = sub.answers ? sub.answers[idx] : 0;
     const isOrigCorrect = (origVal >= 1 && (origVal - 1) === q.answer);
     if (!isOrigCorrect) {
@@ -1986,6 +2684,7 @@ async function checkStudentDailyStatus(examId, cls, seat) {
 function openExamLogin(lessonId) {
   currentLesson = LESSONS.find(l => l.id === lessonId);
   if (!currentLesson || !currentLesson.ready) return;
+  setSupportModeUI(false);
   document.getElementById("login-lesson-title").textContent = `${currentLesson.lessonNum}《${currentLesson.title}》線上測驗`;
   document.getElementById("student-seat").value = "";
   const loginBtn = document.querySelector("#student-login-form .btn-submit-login");
@@ -2013,7 +2712,10 @@ async function startStudentExam(e) {
     loginBtn.textContent = "⏳ 檢查今日作答紀錄中...";
   }
 
-  const check = await checkStudentDailyStatus(examId, cls, seat);
+  const [check] = await Promise.all([
+    checkStudentDailyStatus(examId, cls, seat),
+    loadSupportRoster()
+  ]);
 
   if (loginBtn) {
     loginBtn.disabled = false;
@@ -2024,6 +2726,7 @@ async function startStudentExam(e) {
 
   if (check.status === "found") {
     currentSubmission = check.record;
+    setSupportModeUI(isSupportSubmission(currentSubmission, currentLesson));
     examAnswers = {};
     (currentSubmission.answers || []).forEach((ansVal, idx) => {
       if (ansVal >= 1 && ansVal <= 4) examAnswers[idx] = ansVal - 1;
@@ -2041,6 +2744,9 @@ async function startStudentExam(e) {
     return;
   }
 
+  const useSupport = isSupportStudent(cls, seat) && Array.isArray(currentLesson.supportQuestions) && currentLesson.supportQuestions.length > 0;
+  setSupportModeUI(useSupport);
+
   currentSubmission = null;
   examQIndex = 0;
   examAnswers = {};
@@ -2052,22 +2758,27 @@ async function startStudentExam(e) {
   document.getElementById("exam-test-lesson-title").textContent =
     `${currentLesson.lessonNum}《${currentLesson.title}》測驗`;
 
-  renderExamStage();
+  renderExamStage(true);
   showView("view-exam-test");
+  if (isSupportMode && autoReadEnabled) {
+    setTimeout(() => speakCurrentExamQuestion(), 180);
+  }
 }
 
-function renderExamStage() {
-  const q = currentLesson.questions[examQIndex];
+function renderExamStage(skipAutoSpeak = false) {
+  const qs = getActiveQuestions();
+  const q = qs[examQIndex];
+  if (!q) return;
   const selectedOpt = examAnswers[examQIndex];
 
   // 更新進度
   const answeredCount = Object.keys(examAnswers).length;
   document.getElementById("exam-progress-text").textContent =
-    `已作答 ${answeredCount} / ${currentLesson.questions.length} 題`;
+    `已作答 ${answeredCount} / ${qs.length} 題`;
 
   // 渲染題號導覽
   const dotsEl = document.getElementById("exam-q-dots");
-  dotsEl.innerHTML = currentLesson.questions.map((item, idx) => {
+  dotsEl.innerHTML = qs.map((item, idx) => {
     let cls = "q-dot";
     if (idx === examQIndex) cls += " current";
     if (examAnswers[idx] !== undefined) cls += " answered";
@@ -2078,10 +2789,34 @@ function renderExamStage() {
   document.getElementById("exam-stem").innerHTML =
     `<span class="question-num-pill">第 ${examQIndex + 1} 題</span>${formatStemHTML(q.stem)}`;
 
+  const hintBox = document.getElementById("exam-hint-box");
+  if (isSupportMode && q.hint) {
+    hintBox.style.display = "flex";
+    hintBox.innerHTML = `
+      <div class="support-hint-text">💡 <b>小提示：</b>${formatStemHTML(q.hint)}</div>
+      <button type="button" class="tts-mini-btn" onclick="speakCurrentHint(this)" title="念提示">🔊</button>
+    `;
+  } else {
+    hintBox.style.display = "none";
+    hintBox.innerHTML = "";
+  }
+
   const optsEl = document.getElementById("exam-options");
-  optsEl.className = "options-grid" + (q.singleCol || q.options.some(o => o.length > 16) ? " single-col" : "");
+  const isSingle = isSupportMode || q.singleCol || q.options.some(o => o.length > 16);
+  optsEl.className = "options-grid" + (isSingle ? " single-col" : "");
   optsEl.innerHTML = q.options.map((optText, optIdx) => {
     const isSel = (selectedOpt === optIdx);
+    if (isSupportMode) {
+      return `
+        <div class="option-row-wrap">
+          <button type="button" class="option-btn ${isSel ? 'selected-student' : ''}" onclick="selectExamOption(${optIdx})">
+            <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+            <span>${formatStemHTML(optText)}</span>
+          </button>
+          <button type="button" class="tts-opt-btn" onclick="speakExamOption(event, ${optIdx}, this)" title="念這個選項" aria-label="念選項 ${optIdx + 1}">🔊</button>
+        </div>
+      `;
+    }
     return `
       <button class="option-btn ${isSel ? 'selected-student' : ''}" onclick="selectExamOption(${optIdx})">
         <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
@@ -2091,28 +2826,49 @@ function renderExamStage() {
   }).join("");
 
   document.getElementById("btn-exam-prev").disabled = (examQIndex === 0);
-  document.getElementById("btn-exam-next").disabled = (examQIndex === currentLesson.questions.length - 1);
+  document.getElementById("btn-exam-next").disabled = (examQIndex === qs.length - 1);
+
+  if (isSupportMode && autoReadEnabled && !skipAutoSpeak) {
+    speakCurrentExamQuestion();
+  }
 }
 
 function selectExamOption(optIdx) {
+  const qs = getActiveQuestions();
+  const q = qs[examQIndex];
+  if (!q || optIdx < 0 || optIdx >= q.options.length) return;
   examAnswers[examQIndex] = optIdx;
-  renderExamStage();
+  renderExamStage(true);
 }
 
 function prevExamQuestion() {
-  if (examQIndex > 0) { examQIndex--; renderExamStage(); }
+  if (examQIndex > 0) {
+    stopSpeech();
+    examQIndex--;
+    renderExamStage(false);
+  }
 }
 function nextExamQuestion() {
-  if (examQIndex < currentLesson.questions.length - 1) { examQIndex++; renderExamStage(); }
+  const qs = getActiveQuestions();
+  if (examQIndex < qs.length - 1) {
+    stopSpeech();
+    examQIndex++;
+    renderExamStage(false);
+  }
 }
 function jumpExamQuestion(idx) {
+  const qs = getActiveQuestions();
+  if (idx < 0 || idx >= qs.length) return;
+  stopSpeech();
   examQIndex = idx;
-  renderExamStage();
+  renderExamStage(false);
 }
 
 // 送出並檢查
 async function confirmSubmitExam() {
-  const total = currentLesson.questions.length;
+  stopSpeech();
+  const qs = getActiveQuestions();
+  const total = qs.length;
   const missing = [];
   for (let i = 0; i < total; i++) {
     if (examAnswers[i] === undefined) missing.push(i + 1);
@@ -2136,7 +2892,7 @@ async function confirmSubmitExam() {
     const chosen = examAnswers[i];
     if (chosen !== undefined) {
       answersArr.push(chosen + 1); // 轉為 1~4
-      if (chosen === currentLesson.questions[i].answer) correctCount++;
+      if (chosen === qs[i].answer) correctCount++;
     } else {
       answersArr.push(0); // 0 代表未作答
     }
@@ -2144,7 +2900,8 @@ async function confirmSubmitExam() {
 
   const examId = currentLesson.examId || `${currentLesson.id}-chinese`;
   const examTitle = `${currentLesson.lessonNum}《${currentLesson.title}》`;
-  const clientId = (crypto.randomUUID ? crypto.randomUUID() : `cid-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const baseClientId = (crypto.randomUUID ? crypto.randomUUID() : `cid-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const clientId = isSupportMode ? `${baseClientId}__sup` : baseClientId;
 
   const payload = {
     exam_id: examId,
@@ -2186,6 +2943,7 @@ async function confirmSubmitExam() {
     const check = await checkStudentDailyStatus(examId, currentStudent.class, currentStudent.seat);
     if (check.status === "found") {
       currentSubmission = check.record;
+      setSupportModeUI(isSupportSubmission(currentSubmission, currentLesson));
       examAnswers = {};
       (currentSubmission.answers || []).forEach((v, idx) => {
         if (v >= 1 && v <= 4) examAnswers[idx] = v - 1;
@@ -2224,8 +2982,9 @@ async function confirmSubmitExam() {
 
 function getWrongQuestionIndices() {
   if (!currentSubmission || !currentLesson) return [];
+  const qs = getActiveQuestions(currentLesson, isSupportSubmission(currentSubmission, currentLesson));
   const wrongs = [];
-  currentLesson.questions.forEach((q, idx) => {
+  qs.forEach((q, idx) => {
     const val = (currentSubmission.answers && currentSubmission.answers[idx]) || 0;
     if (val - 1 !== q.answer) wrongs.push(idx);
   });
@@ -2274,6 +3033,9 @@ function renderExamResultView(isReturning) {
     descEl.textContent = `共 ${total} 題，答對 ${correctCount} 題，答錯 ${wrongIndices.length} 題（當下分數已送至教師後台）`;
 
     calloutEl.style.display = "block";
+    calloutEl.style.background = "#fffbeb";
+    calloutEl.style.borderColor = "#f59e0b";
+    calloutEl.style.color = "#92400e";
     calloutEl.innerHTML = `💪 <b>錯題訂正補分機會：</b>您共有 <b>${wrongIndices.length} 題</b>答錯（第 ${wrongIndices.map(i => i + 1).join("、")} 題）。<br>現在可以針對個人錯題<b>再做一次</b>，不一定要全部答對，<b>只要訂正後有對的題目就會直接補回原卷該題分數</b>！若未完成訂正，將以當下測驗的 ${rawPct} 分為主。`;
 
     btnRetry.style.display = "inline-flex";
@@ -2338,6 +3100,7 @@ function startWrongQuestionRetry() {
 }
 
 function renderRetryList() {
+  const qs = getActiveQuestions(currentLesson, isSupportSubmission(currentSubmission, currentLesson));
   const wrongIndices = getWrongQuestionIndices();
   const answeredCnt = Object.keys(retryAnswersMap).length;
   document.getElementById("retry-progress-text").textContent =
@@ -2345,13 +3108,24 @@ function renderRetryList() {
 
   const container = document.getElementById("retry-questions-list");
   container.innerHTML = wrongIndices.map(qIdx => {
-    const q = currentLesson.questions[qIdx];
+    const q = qs[qIdx];
     const prevChoice = (currentSubmission.answers && currentSubmission.answers[qIdx]) ? currentSubmission.answers[qIdx] - 1 : undefined;
     const retryChoice = retryAnswersMap[qIdx];
-    const singleCol = q.singleCol || q.options.some(o => o.length > 16);
+    const singleCol = isSupportMode || q.singleCol || q.options.some(o => o.length > 16);
 
     const optsHtml = q.options.map((optText, optIdx) => {
       const isSel = (retryChoice === optIdx);
+      if (isSupportMode) {
+        return `
+          <div class="option-row-wrap">
+            <button type="button" class="option-btn ${isSel ? 'selected-student' : ''}" onclick="selectRetryOption(${qIdx}, ${optIdx})">
+              <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+              <span>${formatStemHTML(optText)}</span>
+            </button>
+            <button type="button" class="tts-opt-btn" onclick="speakRetryOption(event, ${qIdx}, ${optIdx}, this)" title="念這個選項">🔊</button>
+          </div>
+        `;
+      }
       return `
         <button class="option-btn ${isSel ? 'selected-student' : ''}" onclick="selectRetryOption(${qIdx}, ${optIdx})">
           <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
@@ -2360,15 +3134,30 @@ function renderRetryList() {
       `;
     }).join("");
 
+    const hintHtml = (isSupportMode && q.hint) ? `
+      <div class="support-hint-box">
+        <div class="support-hint-text">💡 <b>小提示：</b>${formatStemHTML(q.hint)}</div>
+        <button type="button" class="tts-mini-btn" onclick="speakRetryHint(${qIdx}, this)" title="念提示">🔊</button>
+      </div>
+    ` : "";
+
+    const ttsBtnHtml = isSupportMode
+      ? `<button type="button" class="tts-btn" onclick="speakRetryQuestion(${qIdx}, this)">🔊 念題目</button>`
+      : "";
+
     return `
       <div class="stage-card">
         <div class="question-stem">
-          <div style="margin-bottom:12px;">
-            <span class="question-num-pill">第 ${qIdx + 1} 題</span>
-            <span class="prev-wrong-pill">上次誤選：${prevChoice !== undefined ? CIRCLED_NUMS[prevChoice] : '未作答'}</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+            <div>
+              <span class="question-num-pill">第 ${qIdx + 1} 題</span>
+              <span class="prev-wrong-pill">上次誤選：${prevChoice !== undefined ? CIRCLED_NUMS[prevChoice] : '未作答'}</span>
+            </div>
+            ${ttsBtnHtml}
           </div>
           ${formatStemHTML(q.stem)}
         </div>
+        ${hintHtml}
         <div class="options-grid ${singleCol ? 'single-col' : ''}">${optsHtml}</div>
       </div>
     `;
@@ -2381,12 +3170,15 @@ function selectRetryOption(qIdx, optIdx) {
 }
 
 function cancelRetryBackToResult() {
+  stopSpeech();
   currentMode = "result";
   renderExamResultView(true);
   showView("view-exam-result");
 }
 
 async function submitWrongQuestionRetry() {
+  stopSpeech();
+  const qs = getActiveQuestions(currentLesson, isSupportSubmission(currentSubmission, currentLesson));
   const wrongIndices = getWrongQuestionIndices();
   const missing = wrongIndices.filter(qIdx => retryAnswersMap[qIdx] === undefined);
 
@@ -2409,7 +3201,7 @@ async function submitWrongQuestionRetry() {
   wrongIndices.forEach(qIdx => {
     const chosen = retryAnswersMap[qIdx];
     retryAnswersFull[qIdx] = chosen + 1;
-    if (chosen === currentLesson.questions[qIdx].answer) {
+    if (qs[qIdx] && chosen === qs[qIdx].answer) {
       retryCorrectCount++;
     }
   });
@@ -2454,10 +3246,11 @@ async function submitWrongQuestionRetry() {
 
 // 產生學生個人訂正詳解清單（含重做紀錄）
 function renderCorrectionSheet() {
+  const qs = getActiveQuestions(currentLesson, isSupportSubmission(currentSubmission, currentLesson));
   const container = document.getElementById("correction-sheet");
   let html = `<h2 style="font-size:2rem;font-weight:900;color:#1e3a8a;margin-bottom:12px;">📑 試卷題目訂正與詳解</h2>`;
 
-  currentLesson.questions.forEach((q, idx) => {
+  qs.forEach((q, idx) => {
     const rawAnsVal = (currentSubmission && currentSubmission.answers) ? currentSubmission.answers[idx] : 0;
     const studentChoice = rawAnsVal >= 1 ? rawAnsVal - 1 : undefined;
     const retryVal = (currentSubmission && currentSubmission.retry_answers) ? currentSubmission.retry_answers[idx] : 0;
@@ -2465,7 +3258,7 @@ function renderCorrectionSheet() {
 
     const isOrigCorrect = (studentChoice === q.answer);
     const isRetryCorrect = (retryChoice === q.answer);
-    const singleCol = q.singleCol || q.options.some(o => o.length > 16);
+    const singleCol = isSupportMode || q.singleCol || q.options.some(o => o.length > 16);
 
     const optsHtml = q.options.map((optText, optIdx) => {
       let cls = "option-btn";
@@ -2495,12 +3288,19 @@ function renderCorrectionSheet() {
         : `<span style="background:#fee2e2;color:#dc2626;padding:4px 12px;border-radius:8px;font-weight:800;font-size:1.1rem;">❌ 答錯（您的答案：${CIRCLED_NUMS[studentChoice]}）</span>`;
     }
 
+    const speakBtn = isSupportMode
+      ? `<button type="button" class="tts-btn" style="padding:8px 16px;font-size:1.1rem;" onclick="speakCorrectionItem(${idx}, this)">🔊 念題目與解析</button>`
+      : "";
+
     html += `
       <div class="stage-card">
         <div class="question-stem">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-            <span class="question-num-pill">第 ${idx + 1} 題</span>
-            ${statusTag}
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span class="question-num-pill">第 ${idx + 1} 題</span>
+              ${statusTag}
+            </div>
+            ${speakBtn}
           </div>
           ${formatStemHTML(q.stem)}
         </div>
@@ -2569,6 +3369,7 @@ window.addEventListener("keydown", (e) => {
 initSeatSelect();
 renderHome();
 syncPendingLocalRetries();
+loadSupportRoster();
 </script>
 </body>
 </html>
