@@ -764,29 +764,6 @@
     box-shadow: inset 0 -2px 0 rgba(217, 119, 6, 0.35);
   }
 
-  .auto-read-toggle {
-    background: rgba(255, 255, 255, 0.18);
-    color: #fff;
-    border: 2px solid rgba(255, 255, 255, 0.45);
-    padding: 7px 14px;
-    border-radius: 999px;
-    font-size: calc(1.1rem * var(--font-scale));
-    font-weight: 800;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.15s ease;
-  }
-  .auto-read-toggle:hover {
-    background: rgba(255, 255, 255, 0.28);
-  }
-  .auto-read-toggle.active {
-    background: #fef3c7;
-    color: #92400e;
-    border-color: #fbbf24;
-  }
-
   .support-tts-bar {
     display: flex;
     align-items: center;
@@ -1046,7 +1023,6 @@
         <span style="font-size:calc(1.4rem * var(--font-scale));font-weight:900;" id="exam-test-lesson-title">第七課 線上隨堂測驗</span>
       </div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button type="button" id="btn-auto-read-toggle" class="auto-read-toggle active" style="display:none;" onclick="toggleAutoRead()">🔊 自動朗讀：開</button>
         <div class="exam-progress-text" id="exam-progress-text">已作答 0 / 15 題</div>
       </div>
     </div>
@@ -2160,8 +2136,9 @@ const SUPPORT_STORAGE_KEY = "chaohe_support_tokens_v1";
 let remoteSupportTokens = null; // null: 未載入或表未建立；Array: 雲端回傳結果
 let supportRosterLoaded = false;
 let isSupportMode = false;
-let autoReadEnabled = true;
 let activeSpeakingBtn = null;
+let supportAudioEl = null;
+let supportAudioPlaySeq = 0;
 
 function canonicalSupportClass(cls) {
   const cleaned = String(cls || "").trim().replace(/[^0-9a-zA-Z]/g, "");
@@ -2279,31 +2256,9 @@ function getActiveQuestions(lesson = currentLesson, useSupport = isSupportMode) 
 function setSupportModeUI(active) {
   isSupportMode = Boolean(active);
   document.body.classList.toggle("support-mode", isSupportMode);
-  const autoBtn = document.getElementById("btn-auto-read-toggle");
   const readQBtn = document.getElementById("btn-exam-read-q");
-  if (autoBtn) {
-    autoBtn.style.display = isSupportMode ? "inline-flex" : "none";
-    updateAutoReadBtnLabel();
-  }
   if (readQBtn) {
     readQBtn.style.display = isSupportMode ? "inline-flex" : "none";
-  }
-}
-
-function updateAutoReadBtnLabel() {
-  const autoBtn = document.getElementById("btn-auto-read-toggle");
-  if (!autoBtn) return;
-  autoBtn.classList.toggle("active", autoReadEnabled);
-  autoBtn.textContent = autoReadEnabled ? "🔊 自動朗讀：開" : "🔇 自動朗讀：關";
-}
-
-function toggleAutoRead() {
-  autoReadEnabled = !autoReadEnabled;
-  updateAutoReadBtnLabel();
-  if (!autoReadEnabled) {
-    stopSpeech();
-  } else if (currentMode === "exam" && isSupportMode) {
-    speakCurrentExamQuestion();
   }
 }
 
@@ -2319,15 +2274,38 @@ function getZhTwVoice() {
   return cachedZhTwVoice;
 }
 
-if (typeof window !== "undefined" && "speechSynthesis" in window) {
-  window.speechSynthesis.onvoiceschanged = () => { getZhTwVoice(); };
-  window.addEventListener("beforeunload", () => { try { window.speechSynthesis.cancel(); } catch {} });
+if (typeof window !== "undefined") {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.onvoiceschanged = () => { getZhTwVoice(); };
+  }
+  window.addEventListener("beforeunload", () => { stopSpeech(); });
 }
 
-function stopSpeech() {
+function getSupportAudioElement() {
+  if (!supportAudioEl && typeof Audio !== "undefined") {
+    supportAudioEl = new Audio();
+    supportAudioEl.preload = "none";
+  }
+  return supportAudioEl;
+}
+
+function clearSpeakingBtnState() {
   if (activeSpeakingBtn) {
     activeSpeakingBtn.classList.remove("speaking");
     activeSpeakingBtn = null;
+  }
+}
+
+function stopSpeech() {
+  supportAudioPlaySeq++;
+  clearSpeakingBtnState();
+  if (supportAudioEl) {
+    try {
+      supportAudioEl.onended = null;
+      supportAudioEl.onerror = null;
+      supportAudioEl.pause();
+      supportAudioEl.currentTime = 0;
+    } catch {}
   }
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
     try { window.speechSynthesis.cancel(); } catch {}
@@ -2348,13 +2326,11 @@ function cleanTextForSpeech(text) {
     .trim();
 }
 
-function speakText(text, btnEl = null) {
+function speakTextFallback(text, btnEl, seq) {
+  if (seq !== supportAudioPlaySeq) return;
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   const cleaned = cleanTextForSpeech(text);
   if (!cleaned) return;
-  const wasSameBtn = btnEl && activeSpeakingBtn === btnEl && window.speechSynthesis.speaking;
-  stopSpeech();
-  if (wasSameBtn) return;
 
   try {
     const utter = new SpeechSynthesisUtterance(cleaned);
@@ -2368,15 +2344,71 @@ function speakText(text, btnEl = null) {
       btnEl.classList.add("speaking");
     }
     const clearState = () => {
-      if (btnEl) btnEl.classList.remove("speaking");
-      if (activeSpeakingBtn === btnEl) activeSpeakingBtn = null;
+      if (seq !== supportAudioPlaySeq) return;
+      clearSpeakingBtnState();
     };
     utter.onend = clearState;
     utter.onerror = clearState;
     window.speechSynthesis.speak(utter);
   } catch (err) {
     console.warn("語音朗讀失敗:", err);
+    if (seq === supportAudioPlaySeq) clearSpeakingBtnState();
   }
+}
+
+function playSupportAudio(audioId, fallbackText, btnEl = null) {
+  const isSameBtn = Boolean(btnEl && activeSpeakingBtn === btnEl);
+  stopSpeech();
+  if (isSameBtn) return;
+
+  const seq = supportAudioPlaySeq;
+  const audio = getSupportAudioElement();
+
+  if (audioId && audio) {
+    if (btnEl) {
+      activeSpeakingBtn = btnEl;
+      btnEl.classList.add("speaking");
+    }
+    let fallbackTriggered = false;
+    const triggerFallback = () => {
+      if (fallbackTriggered || seq !== supportAudioPlaySeq) return;
+      fallbackTriggered = true;
+      audio.onended = null;
+      audio.onerror = null;
+      clearSpeakingBtnState();
+      if (fallbackText) speakTextFallback(fallbackText, btnEl, seq);
+    };
+
+    audio.onended = () => {
+      if (seq !== supportAudioPlaySeq) return;
+      clearSpeakingBtnState();
+    };
+    audio.onerror = triggerFallback;
+    audio.src = `./assets/audio/${audioId}.mp3`;
+
+    try {
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch((err) => {
+          if (seq !== supportAudioPlaySeq) return;
+          if (err && err.name === "AbortError") return;
+          triggerFallback();
+        });
+      }
+    } catch {
+      triggerFallback();
+    }
+    return;
+  }
+
+  if (fallbackText) {
+    speakTextFallback(fallbackText, btnEl, seq);
+  }
+}
+
+function getSupportAudioId(qIdx, suffix) {
+  if (!currentLesson || !currentLesson.id) return "";
+  return `${currentLesson.id}_s${qIdx + 1}_${suffix}`;
 }
 
 function buildQuestionSpeechText(q, qNum) {
@@ -2394,7 +2426,7 @@ function speakCurrentExamQuestion(btnEl = null) {
   const q = qs[examQIndex];
   if (!q) return;
   const targetBtn = btnEl || document.getElementById("btn-exam-read-q");
-  speakText(buildQuestionSpeechText(q, examQIndex + 1), targetBtn);
+  playSupportAudio(getSupportAudioId(examQIndex, "q"), buildQuestionSpeechText(q, examQIndex + 1), targetBtn);
 }
 
 function speakExamOption(event, optIdx, btnEl) {
@@ -2404,21 +2436,25 @@ function speakExamOption(event, optIdx, btnEl) {
   if (!q || !q.options[optIdx]) return;
   const numLabels = ["一", "二", "三", "四"];
   const optSpeak = (q.speakOptions && q.speakOptions[optIdx]) ? q.speakOptions[optIdx] : q.options[optIdx];
-  speakText(`選項${numLabels[optIdx] || (optIdx + 1)}，${cleanTextForSpeech(optSpeak)}`, btnEl);
+  playSupportAudio(
+    getSupportAudioId(examQIndex, `o${optIdx + 1}`),
+    `選項${numLabels[optIdx] || (optIdx + 1)}，${cleanTextForSpeech(optSpeak)}`,
+    btnEl
+  );
 }
 
 function speakCurrentHint(btnEl) {
   const qs = getActiveQuestions();
   const q = qs[examQIndex];
   if (!q || !q.hint) return;
-  speakText(`小提示。${cleanTextForSpeech(q.hint)}`, btnEl);
+  playSupportAudio(getSupportAudioId(examQIndex, "hint"), `小提示。${cleanTextForSpeech(q.hint)}`, btnEl);
 }
 
 function speakRetryQuestion(qIdx, btnEl) {
   const qs = getActiveQuestions();
   const q = qs[qIdx];
   if (!q) return;
-  speakText(buildQuestionSpeechText(q, qIdx + 1), btnEl);
+  playSupportAudio(getSupportAudioId(qIdx, "q"), buildQuestionSpeechText(q, qIdx + 1), btnEl);
 }
 
 function speakRetryOption(event, qIdx, optIdx, btnEl) {
@@ -2428,24 +2464,28 @@ function speakRetryOption(event, qIdx, optIdx, btnEl) {
   if (!q || !q.options[optIdx]) return;
   const numLabels = ["一", "二", "三", "四"];
   const optSpeak = (q.speakOptions && q.speakOptions[optIdx]) ? q.speakOptions[optIdx] : q.options[optIdx];
-  speakText(`選項${numLabels[optIdx] || (optIdx + 1)}，${cleanTextForSpeech(optSpeak)}`, btnEl);
+  playSupportAudio(
+    getSupportAudioId(qIdx, `o${optIdx + 1}`),
+    `選項${numLabels[optIdx] || (optIdx + 1)}，${cleanTextForSpeech(optSpeak)}`,
+    btnEl
+  );
 }
 
 function speakRetryHint(qIdx, btnEl) {
   const qs = getActiveQuestions();
   const q = qs[qIdx];
   if (!q || !q.hint) return;
-  speakText(`小提示。${cleanTextForSpeech(q.hint)}`, btnEl);
+  playSupportAudio(getSupportAudioId(qIdx, "hint"), `小提示。${cleanTextForSpeech(q.hint)}`, btnEl);
 }
 
-function speakCorrectionItem(qIdx, btnEl) {
+function speakCorrectionExp(qIdx, btnEl) {
   const qs = getActiveQuestions();
   const q = qs[qIdx];
   if (!q) return;
   const numLabels = ["一", "二", "三", "四"];
   const ansText = (q.speakOptions && q.speakOptions[q.answer]) ? q.speakOptions[q.answer] : q.options[q.answer];
-  const full = `第${qIdx + 1}題。${cleanTextForSpeech(q.speakStem || q.stem)}。正確答案是選項${numLabels[q.answer] || (q.answer + 1)}，${cleanTextForSpeech(ansText)}。${cleanTextForSpeech(q.explanation)}`;
-  speakText(full, btnEl);
+  const fallback = `正確答案是選項${numLabels[q.answer] || (q.answer + 1)}，${cleanTextForSpeech(ansText)}。${cleanTextForSpeech(q.explanation)}`;
+  playSupportAudio(getSupportAudioId(qIdx, "exp"), fallback, btnEl);
 }
 
 // ==================== 模式二：學生線上測驗（每日限一次 + 錯題訂正補回原題分數） ====================
@@ -2758,14 +2798,11 @@ async function startStudentExam(e) {
   document.getElementById("exam-test-lesson-title").textContent =
     `${currentLesson.lessonNum}《${currentLesson.title}》測驗`;
 
-  renderExamStage(true);
+  renderExamStage();
   showView("view-exam-test");
-  if (isSupportMode && autoReadEnabled) {
-    setTimeout(() => speakCurrentExamQuestion(), 180);
-  }
 }
 
-function renderExamStage(skipAutoSpeak = false) {
+function renderExamStage() {
   const qs = getActiveQuestions();
   const q = qs[examQIndex];
   if (!q) return;
@@ -2827,10 +2864,6 @@ function renderExamStage(skipAutoSpeak = false) {
 
   document.getElementById("btn-exam-prev").disabled = (examQIndex === 0);
   document.getElementById("btn-exam-next").disabled = (examQIndex === qs.length - 1);
-
-  if (isSupportMode && autoReadEnabled && !skipAutoSpeak) {
-    speakCurrentExamQuestion();
-  }
 }
 
 function selectExamOption(optIdx) {
@@ -2838,14 +2871,14 @@ function selectExamOption(optIdx) {
   const q = qs[examQIndex];
   if (!q || optIdx < 0 || optIdx >= q.options.length) return;
   examAnswers[examQIndex] = optIdx;
-  renderExamStage(true);
+  renderExamStage();
 }
 
 function prevExamQuestion() {
   if (examQIndex > 0) {
     stopSpeech();
     examQIndex--;
-    renderExamStage(false);
+    renderExamStage();
   }
 }
 function nextExamQuestion() {
@@ -2853,7 +2886,7 @@ function nextExamQuestion() {
   if (examQIndex < qs.length - 1) {
     stopSpeech();
     examQIndex++;
-    renderExamStage(false);
+    renderExamStage();
   }
 }
 function jumpExamQuestion(idx) {
@@ -2861,7 +2894,7 @@ function jumpExamQuestion(idx) {
   if (idx < 0 || idx >= qs.length) return;
   stopSpeech();
   examQIndex = idx;
-  renderExamStage(false);
+  renderExamStage();
 }
 
 // 送出並檢查
@@ -3264,6 +3297,17 @@ function renderCorrectionSheet() {
       let cls = "option-btn";
       if (optIdx === q.answer) cls += " correct";
       else if (retryChoice === optIdx || (retryChoice === undefined && studentChoice === optIdx)) cls += " wrong";
+      if (isSupportMode) {
+        return `
+          <div class="option-row-wrap">
+            <div class="${cls}">
+              <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
+              <span>${formatStemHTML(optText)}</span>
+            </div>
+            <button type="button" class="tts-opt-btn" onclick="speakRetryOption(event, ${idx}, ${optIdx}, this)" title="念這個選項" aria-label="念選項 ${optIdx + 1}">🔊</button>
+          </div>
+        `;
+      }
       return `
         <div class="${cls}">
           <span class="opt-index">${CIRCLED_NUMS[optIdx]}</span>
@@ -3289,7 +3333,18 @@ function renderCorrectionSheet() {
     }
 
     const speakBtn = isSupportMode
-      ? `<button type="button" class="tts-btn" style="padding:8px 16px;font-size:1.1rem;" onclick="speakCorrectionItem(${idx}, this)">🔊 念題目與解析</button>`
+      ? `<button type="button" class="tts-btn" style="padding:8px 16px;font-size:1.1rem;" onclick="speakRetryQuestion(${idx}, this)">🔊 念題目</button>`
+      : "";
+
+    const hintHtml = (isSupportMode && q.hint) ? `
+      <div class="support-hint-box">
+        <div class="support-hint-text">💡 <b>小提示：</b>${formatStemHTML(q.hint)}</div>
+        <button type="button" class="tts-mini-btn" onclick="speakRetryHint(${idx}, this)" title="念提示">🔊</button>
+      </div>
+    ` : "";
+
+    const expSpeakBtn = isSupportMode
+      ? `<button type="button" class="tts-mini-btn" style="padding:0 14px;font-size:1.05rem;" onclick="speakCorrectionExp(${idx}, this)" title="念解析">🔊 念解析</button>`
       : "";
 
     html += `
@@ -3304,9 +3359,13 @@ function renderCorrectionSheet() {
           </div>
           ${formatStemHTML(q.stem)}
         </div>
+        ${hintHtml}
         <div class="options-grid ${singleCol ? 'single-col' : ''}">${optsHtml}</div>
         <div class="explanation-box show" style="margin-top:20px;">
-          <div class="exp-header">💡 正確解答：${CIRCLED_NUMS[q.answer]}</div>
+          <div class="exp-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span>💡 正確解答：${CIRCLED_NUMS[q.answer]}</span>
+            ${expSpeakBtn}
+          </div>
           <div class="exp-body">${formatStemHTML(q.explanation)}</div>
         </div>
       </div>
