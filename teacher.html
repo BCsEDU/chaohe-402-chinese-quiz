@@ -536,10 +536,11 @@ function mergeRetryRows(rawRows) {
         getTaipeiDay(m.created_at) === rrDay
       );
     }
-    if (target && target.score < target.total && (target.retry_passed === null || target.retry_passed === undefined)) {
+    if (target && target.score < target.total && !target.retry_done && (target.retry_passed === null || target.retry_passed === undefined)) {
       target._retry_id = rr.id;
       target.bonus_points = Number(rr.score || 0);
-      target.retry_passed = (Number(rr.score || 0) === 10);
+      target.retry_done = true;
+      target.retry_passed = (target.bonus_points > 0);
       target.retry_answers = rr.answers;
       target.retry_at = rr.created_at;
     }
@@ -590,6 +591,23 @@ function computeScoreInfo(r) {
   const bonus = Number(r.bonus_points || 0);
   const finalPct = Math.min(100, rawPct + bonus);
 
+  const eInfo = EXAM_KEYS[r.exam_id];
+  let wrongCount = Math.max(0, Number(r.total || 0) - Number(r.score || 0));
+  let fixedCount = null;
+  if (eInfo && Array.isArray(r.retry_answers) && r.retry_answers.length === eInfo.answers.length) {
+    let w = 0;
+    let f = 0;
+    eInfo.answers.forEach((ansKey, idx) => {
+      const origAns = Array.isArray(r.answers) ? r.answers[idx] : 0;
+      if (origAns !== ansKey) {
+        w++;
+        if (r.retry_answers[idx] === ansKey) f++;
+      }
+    });
+    wrongCount = w;
+    fixedCount = f;
+  }
+
   let statusText = "";
   let statusClass = "";
   let shortTag = "";
@@ -598,18 +616,24 @@ function computeScoreInfo(r) {
     statusText = "💯 原卷滿分";
     statusClass = "pill-perfect";
     shortTag = "原卷滿分";
-  } else if (r.retry_passed === true) {
-    statusText = "✅ 錯題全對 +10";
+  } else if (bonus > 0) {
+    if (fixedCount !== null && wrongCount > 0) {
+      statusText = (fixedCount >= wrongCount)
+        ? `✅ 錯題全對 +${bonus}`
+        : `✅ 訂正對${fixedCount}/${wrongCount}題 +${bonus}`;
+    } else {
+      statusText = `✅ 訂正補分 +${bonus}`;
+    }
     statusClass = "pill-retry-ok";
-    shortTag = `原${rawPct} +10`;
-  } else if (r.retry_passed === false) {
-    statusText = "❌ 重做未全對 (+0)";
+    shortTag = `原${rawPct} +${bonus}`;
+  } else if (r.retry_done || r.retry_passed === false) {
+    statusText = "❌ 訂正未得分 (+0)";
     statusClass = "pill-retry-fail";
-    shortTag = `原${rawPct} 未通過`;
+    shortTag = `原${rawPct} 未加分`;
   } else {
-    statusText = "⏳ 尚未重做";
+    statusText = "⏳ 尚未訂正";
     statusClass = "pill-retry-wait";
-    shortTag = "尚未重做";
+    shortTag = "尚未訂正";
   }
 
   return { rawPct, bonus, finalPct, statusText, statusClass, shortTag };
@@ -638,7 +662,7 @@ function renderDashboard() {
   const avgFinal = finalScores.length ? Math.round(finalScores.reduce((a, b) => a + b, 0) / finalScores.length) : 0;
   const maxScore = finalScores.length ? Math.max(...finalScores) : 0;
   const minScore = finalScores.length ? Math.min(...finalScores) : 0;
-  const bonusCount = filtered.filter(r => r.retry_passed === true).length;
+  const bonusCount = scoreInfos.filter(s => s.bonus > 0).length;
 
   document.getElementById("stats-summary").innerHTML = `
     <div class="stat-card">
@@ -663,7 +687,7 @@ function renderDashboard() {
     </div>
     <div class="stat-card">
       <div class="stat-val" style="color:#0284c7;">${bonusCount}</div>
-      <div class="stat-lbl">錯題全對加分人數</div>
+      <div class="stat-lbl">錯題訂正加分人數</div>
     </div>
   `;
 
@@ -921,7 +945,7 @@ function isClass402(cls) {
 function buildAutoSyncNote(r, info) {
   if (r.score >= r.total && r.total > 0) return "[線上測驗] 原卷滿分";
   if (info.bonus > 0) return `[線上測驗] 原${info.rawPct}分 +${info.bonus}訂正`;
-  if (r.retry_passed === false) return `[線上測驗] 原${info.rawPct}分（已訂正未全對）`;
+  if (r.retry_done || r.retry_passed === false) return `[線上測驗] 原${info.rawPct}分（已訂正未加分）`;
   return `[線上測驗] 原${info.rawPct}分（待訂正）`;
 }
 
