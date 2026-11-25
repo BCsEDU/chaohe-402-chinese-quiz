@@ -306,7 +306,8 @@
             <input type="checkbox" id="chk-auto-refresh" checked> 自動更新 (5s)
           </label>
           <span id="txt-last-update" style="color:#64748b;font-size:0.95rem;"></span>
-          <button class="action-btn export" onclick="exportCSV()">📥 匯出成績 CSV</button>
+          <button class="action-btn export" onclick="exportCSV()">📥 匯出成績管理 CSV</button>
+          <button class="action-btn" style="background:#475569;" onclick="exportDetailedCSV()">📊 匯出作答明細 CSV</button>
         </div>
       </div>
 
@@ -773,16 +774,133 @@ function renderDashboard() {
   }
 }
 
-// 匯出 CSV
-function exportCSV() {
+function getFilteredSubmissions() {
   const selectedExam = document.getElementById("sel-exam").value;
   const selectedClass = document.getElementById("sel-class").value;
-  const filtered = allSubmissions.filter(r => {
+  return allSubmissions.filter(r => {
     if (selectedExam && r.exam_id !== selectedExam) return false;
     if (selectedClass && r.class !== selectedClass) return false;
     return true;
   });
+}
 
+function formatTaiwanDate(dateInput) {
+  const ts = dateInput ? new Date(dateInput).getTime() : Date.now();
+  return new Date(ts + 8 * 3600000).toISOString().slice(0, 10);
+}
+
+function getWrongQuestions(r, eInfo) {
+  const wrongQs = [];
+  if (eInfo && r.answers) {
+    eInfo.answers.forEach((ansKey, idx) => {
+      if (r.answers[idx] !== ansKey) wrongQs.push(idx + 1);
+    });
+  }
+  return wrongQs;
+}
+
+function escapeCsvCell(val) {
+  if (val === null || val === undefined) return "";
+  const str = String(val);
+  if (/[",\r\n\t]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function downloadCsvRows(rows, filename) {
+  const csvContent = "\ufeff" + rows.map(row => row.map(escapeCsvCell).join(",")).join("\r\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// 匯出相容於「成績管理系統 (chaohe-402-grades)」的明細 CSV
+function exportCSV() {
+  const filtered = getFilteredSubmissions();
+  if (filtered.length === 0) {
+    alert("目前沒有資料可匯出！");
+    return;
+  }
+
+  // 每份試卷每位學生只取最新一筆作答（與點名看板一致）
+  const latestMap = new Map();
+  const examLatestDate = {};
+  filtered.forEach(r => {
+    const key = `${r.exam_id}|${r.class}|${r.seat}`;
+    const prev = latestMap.get(key);
+    if (!prev || new Date(r.created_at) > new Date(prev.created_at)) {
+      latestMap.set(key, r);
+    }
+    const localDate = formatTaiwanDate(r.created_at);
+    if (!examLatestDate[r.exam_id] || localDate > examLatestDate[r.exam_id]) {
+      examLatestDate[r.exam_id] = localDate;
+    }
+  });
+
+  const examOrder = Object.keys(EXAM_KEYS);
+  const records = Array.from(latestMap.values()).sort((a, b) => {
+    const ea = examOrder.indexOf(a.exam_id);
+    const eb = examOrder.indexOf(b.exam_id);
+    if (ea !== eb) {
+      if (ea === -1) return 1;
+      if (eb === -1) return -1;
+      return ea - eb;
+    }
+    if (a.exam_id !== b.exam_id) return String(a.exam_id).localeCompare(String(b.exam_id));
+    return Number(a.seat) - Number(b.seat);
+  });
+
+  const rows = [
+    ["座號", "科目", "成績類別", "評量名稱", "日期", "滿分", "分數", "備註"]
+  ];
+
+  records.forEach(r => {
+    const eInfo = EXAM_KEYS[r.exam_id];
+    const info = computeScoreInfo(r);
+    const wrongQs = getWrongQuestions(r, eInfo);
+    const title = eInfo ? eInfo.name : r.exam_id;
+    const wrongText = wrongQs.length ? `｜原錯:${wrongQs.join(",")}` : "";
+
+    let note = "";
+    if (r.score >= r.total) {
+      note = `原卷滿分(${r.score}/${r.total})`;
+    } else if (r.retry_passed === true) {
+      note = `原${info.rawPct}(${r.score}/${r.total})｜錯題全對+10${wrongText}`;
+    } else if (r.retry_passed === false) {
+      note = `原${info.rawPct}(${r.score}/${r.total})｜重做未全對(+0)${wrongText}`;
+    } else {
+      note = `原${info.rawPct}(${r.score}/${r.total})｜尚未重做${wrongText}`;
+    }
+
+    rows.push([
+      r.seat,
+      "國語",
+      "小考",
+      title,
+      examLatestDate[r.exam_id] || formatTaiwanDate(r.created_at),
+      100,
+      info.finalPct,
+      note.slice(0, 120)
+    ]);
+  });
+
+  const selectedExam = document.getElementById("sel-exam").value;
+  const examLabel = selectedExam && EXAM_KEYS[selectedExam]
+    ? EXAM_KEYS[selectedExam].name.replace(/[\\/:*?"<>|]/g, "")
+    : "國語小考";
+  downloadCsvRows(rows, `402成績管理匯入_${examLabel}_${formatTaiwanDate()}.csv`);
+}
+
+// 匯出完整作答明細 CSV（含交卷時間與歷次作答紀錄，供 Excel 分析用）
+function exportDetailedCSV() {
+  const filtered = getFilteredSubmissions();
   if (filtered.length === 0) {
     alert("目前沒有資料可匯出！");
     return;
@@ -795,12 +913,7 @@ function exportCSV() {
   filtered.forEach(r => {
     const eInfo = EXAM_KEYS[r.exam_id];
     const info = computeScoreInfo(r);
-    let wrongQs = [];
-    if (eInfo && r.answers) {
-      eInfo.answers.forEach((ansKey, idx) => {
-        if (r.answers[idx] !== ansKey) wrongQs.push(idx + 1);
-      });
-    }
+    const wrongQs = getWrongQuestions(r, eInfo);
     rows.push([
       new Date(r.created_at).toLocaleString("zh-TW", { hour12: false }),
       r.exam_id,
@@ -817,15 +930,7 @@ function exportCSV() {
     ]);
   });
 
-  const csvContent = "\ufeff" + rows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `國語隨堂測驗成績_${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  downloadCsvRows(rows, `國語隨堂測驗作答明細_${formatTaiwanDate()}.csv`);
 }
 </script>
 </body>
