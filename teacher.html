@@ -307,7 +307,6 @@
           </label>
           <span id="txt-last-update" style="color:#64748b;font-size:0.95rem;"></span>
           <button class="action-btn export" onclick="exportCSV()">📥 匯出成績管理 CSV</button>
-          <button class="action-btn" style="background:#475569;" onclick="exportDetailedCSV()">📊 匯出作答明細 CSV</button>
         </div>
       </div>
 
@@ -789,16 +788,6 @@ function formatTaiwanDate(dateInput) {
   return new Date(ts + 8 * 3600000).toISOString().slice(0, 10);
 }
 
-function getWrongQuestions(r, eInfo) {
-  const wrongQs = [];
-  if (eInfo && r.answers) {
-    eInfo.answers.forEach((ansKey, idx) => {
-      if (r.answers[idx] !== ansKey) wrongQs.push(idx + 1);
-    });
-  }
-  return wrongQs;
-}
-
 function escapeCsvCell(val) {
   if (val === null || val === undefined) return "";
   const str = String(val);
@@ -882,41 +871,6 @@ function exportCSV() {
     ? EXAM_KEYS[selectedExam].name.replace(/[\\/:*?"<>|]/g, "")
     : "國語小考";
   downloadCsvRows(rows, `402成績管理匯入_${examLabel}_${formatTaiwanDate()}.csv`);
-}
-
-// 匯出完整作答明細 CSV（含交卷時間與歷次作答紀錄，供 Excel 分析用）
-function exportDetailedCSV() {
-  const filtered = getFilteredSubmissions();
-  if (filtered.length === 0) {
-    alert("目前沒有資料可匯出！");
-    return;
-  }
-
-  const rows = [
-    ["交卷時間", "試卷代號", "試卷名稱", "班級", "座號", "答對題數", "總題數", "原始分數", "錯題重做狀態", "訂正加分", "最終成績", "原始答錯題號"]
-  ];
-
-  filtered.forEach(r => {
-    const eInfo = EXAM_KEYS[r.exam_id];
-    const info = computeScoreInfo(r);
-    const wrongQs = getWrongQuestions(r, eInfo);
-    rows.push([
-      new Date(r.created_at).toLocaleString("zh-TW", { hour12: false }),
-      r.exam_id,
-      eInfo ? eInfo.name : r.exam_id,
-      r.class,
-      r.seat,
-      r.score,
-      r.total,
-      info.rawPct,
-      info.statusText,
-      info.bonus,
-      info.finalPct,
-      wrongQs.join(" ")
-    ]);
-  });
-
-  downloadCsvRows(rows, `國語隨堂測驗作答明細_${formatTaiwanDate()}.csv`);
 }
 </script>
 </body>
