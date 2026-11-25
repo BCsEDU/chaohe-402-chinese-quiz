@@ -858,26 +858,13 @@ function exportCSV() {
   });
 
   const rows = [
-    ["座號", "科目", "成績類別", "評量名稱", "日期", "滿分", "分數", "備註"]
+    ["座號", "科目", "成績類別", "評量名稱", "日期", "滿分", "分數"]
   ];
 
   records.forEach(r => {
     const eInfo = EXAM_KEYS[r.exam_id];
     const info = computeScoreInfo(r);
-    const wrongQs = getWrongQuestions(r, eInfo);
     const title = eInfo ? eInfo.name : r.exam_id;
-    const wrongText = wrongQs.length ? `｜原錯:${wrongQs.join(",")}` : "";
-
-    let note = "";
-    if (r.score >= r.total) {
-      note = `原卷滿分(${r.score}/${r.total})`;
-    } else if (r.retry_passed === true) {
-      note = `原${info.rawPct}(${r.score}/${r.total})｜錯題全對+10${wrongText}`;
-    } else if (r.retry_passed === false) {
-      note = `原${info.rawPct}(${r.score}/${r.total})｜重做未全對(+0)${wrongText}`;
-    } else {
-      note = `原${info.rawPct}(${r.score}/${r.total})｜尚未重做${wrongText}`;
-    }
 
     rows.push([
       r.seat,
@@ -886,8 +873,7 @@ function exportCSV() {
       title,
       examLatestDate[r.exam_id] || formatTaiwanDate(r.created_at),
       100,
-      info.finalPct,
-      note.slice(0, 120)
+      info.finalPct
     ]);
   });
 
